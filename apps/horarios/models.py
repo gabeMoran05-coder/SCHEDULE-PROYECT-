@@ -89,3 +89,15 @@ class HorarioClase(models.Model):
 
     def __str__(self):
         return f"{self.grupo} - {self.materia} - {self.dia}"
+
+
+class HorarioGrupoGuardado(models.Model):
+    grupo = models.OneToOneField(Grupo, on_delete=models.CASCADE, related_name="estado_horario")
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Estado de guardado de horario"
+        verbose_name_plural = "Estados de guardado de horarios"
+
+    def __str__(self):
+        return f"{self.grupo} guardado {self.actualizado_en:%Y-%m-%d %H:%M}"

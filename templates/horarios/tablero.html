@@ -18,12 +18,36 @@
 <section class="scheduler-shell">
     <aside class="assignment-tray">
         <h2>Fichas por colocar</h2>
-        {% for ficha in fichas %}
-            <article class="assignment-card" draggable="true" style="--card-color: {{ ficha.color }};">
-                <strong>{{ ficha.asignacion.contrato.docente }}</strong>
-                <span>{{ ficha.asignacion.materia.nombre }} - {{ ficha.grupo }}</span>
-                <small>{{ ficha.horas_por_colocar }} h - Aula {{ ficha.aula|default:"pendiente" }}</small>
-            </article>
+        {% for docente in tray_docentes %}
+            <details class="teacher-tray" {% if forloop.first %}open{% endif %}>
+                <summary>
+                    <strong>{{ docente.docente }}</strong>
+                    <span>{{ docente.horas_restantes }} h pendientes</span>
+                </summary>
+                <div class="teacher-ficha-list">
+                    {% for ficha in docente.fichas %}
+                        <article
+                            class="assignment-card"
+                            draggable="{% if ficha.horas_restantes > 0 %}true{% else %}false{% endif %}"
+                            style="--card-color: {{ ficha.color }};"
+                            data-ficha-id="{{ ficha.id }}"
+                            data-group-id="{{ ficha.grupo.id }}"
+                            data-grade="{{ ficha.grupo.grado }}"
+                            data-materia-id="{{ ficha.asignacion.materia.id }}"
+                            data-max-hours="{{ ficha.horas_por_colocar }}"
+                            data-remaining-hours="{{ ficha.horas_restantes }}"
+                            data-teacher="{{ ficha.asignacion.contrato.docente }}"
+                            data-materia="{{ ficha.asignacion.materia.nombre }}"
+                            data-group-label="{{ ficha.grupo }}"
+                            data-aula="{{ ficha.aula|default:'pendiente' }}"
+                        >
+                            <strong>{{ ficha.asignacion.materia.nombre }}</strong>
+                            <span>{{ ficha.grupo.grado }}{{ ficha.grupo.letra }} - {{ ficha.asignacion.contrato.docente }}</span>
+                            <small><b data-remaining-label>{{ ficha.horas_restantes }}</b> de {{ ficha.horas_por_colocar }} h - Aula {{ ficha.aula|default:"pendiente" }}</small>
+                        </article>
+                    {% endfor %}
+                </div>
+            </details>
         {% empty %}
             <p class="muted">Crea asignaciones docente-materia para generar fichas.</p>
         {% endfor %}
@@ -47,21 +71,45 @@
             </div>
         </div>
 
-        {% for grupo in grupos %}
-            <article class="group-board" id="grupo-{{ grupo.id }}" data-grade="{{ grupo.grado }}" data-group-board>
-                <h2>{{ grupo.grado }}{{ grupo.letra }}</h2>
+        {% for board in boards %}
+            <article class="group-board" id="grupo-{{ board.grupo.id }}" data-grade="{{ board.grupo.grado }}" data-group-board data-save-url="{% url 'horarios:guardar_grupo' board.grupo.id %}">
+                <div class="group-board-header">
+                    <div>
+                        <h2>{{ board.grupo.grado }}{{ board.grupo.letra }}</h2>
+                        <small>Ultimo guardado: <span data-last-saved>{% if board.last_saved %}{{ board.last_saved|date:"d/m/Y H:i" }}{% else %}Sin guardar{% endif %}</span></small>
+                    </div>
+                    <button class="mini-button save-board-button" type="button" data-save-board>Guardar</button>
+                </div>
                 <div class="schedule-grid">
                     <div class="schedule-cell schedule-head">Hora</div>
                     {% for dia_value, dia_label in dias %}
                         <div class="schedule-cell schedule-head">{{ dia_label }}</div>
                     {% endfor %}
 
-                    {% for bloque in bloques %}
-                        <div class="schedule-cell time-cell">{{ bloque.hora_inicio|time:"H:i" }}</div>
-                        {% for dia_value, dia_label in dias %}
-                            <div class="schedule-cell drop-cell" data-dia="{{ dia_value }}" data-bloque="{{ bloque.id }}" data-grupo="{{ grupo.id }}">
-                                {% if bloque.es_receso %}
+                    {% for row in board.rows %}
+                        <div class="schedule-cell time-cell">{{ row.bloque.hora_inicio|time:"H:i" }}</div>
+                        {% for cell in row.cells %}
+                            <div class="schedule-cell drop-cell" data-dia="{{ cell.dia_value }}" data-bloque="{{ row.bloque.id }}" data-grupo="{{ board.grupo.id }}">
+                                {% if row.bloque.es_receso %}
                                     <strong>RECESO</strong>
+                                {% elif cell.clase %}
+                                    <article
+                                        class="assignment-card placed-card"
+                                        draggable="true"
+                                        style="--card-color: {{ cell.clase.ficha.color|default:'#0f766e' }};"
+                                        data-ficha-id="{{ cell.clase.ficha.id }}"
+                                        data-group-id="{{ cell.clase.grupo.id }}"
+                                        data-grade="{{ cell.clase.grupo.grado }}"
+                                        data-materia-id="{{ cell.clase.materia.id }}"
+                                        data-teacher="{{ cell.clase.contrato.docente }}"
+                                        data-materia="{{ cell.clase.materia.nombre }}"
+                                        data-group-label="{{ cell.clase.grupo }}"
+                                        data-aula="{{ cell.clase.aula|default:'pendiente' }}"
+                                    >
+                                        <strong>{{ cell.clase.contrato.docente }}</strong>
+                                        <span>{{ cell.clase.materia.nombre }} - {{ cell.clase.grupo }}</span>
+                                        <small>Aula {{ cell.clase.aula|default:"pendiente" }}</small>
+                                    </article>
                                 {% endif %}
                             </div>
                         {% endfor %}

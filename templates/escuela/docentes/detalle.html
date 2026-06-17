@@ -91,6 +91,43 @@
     </section>
 
     <section class="detail-section">
+        <div class="section-title-row">
+            <div>
+                <h2>Horario semanal</h2>
+                <p class="muted">Los espacios vacios son horas libres dentro del ciclo seleccionado.</p>
+            </div>
+        </div>
+
+        <div class="teacher-schedule-wrap">
+            <div class="teacher-schedule-grid">
+                <div class="schedule-cell schedule-head">Hora</div>
+                {% for dia_value, dia_label in dias %}
+                    <div class="schedule-cell schedule-head">{{ dia_label }}</div>
+                {% endfor %}
+
+                {% for row in horario_docente %}
+                    <div class="schedule-cell time-cell">{{ row.bloque.hora_inicio|time:"H:i" }}</div>
+                    {% for cell in row.cells %}
+                        <div class="schedule-cell teacher-schedule-cell {% if not cell.clase %}free-cell{% endif %}">
+                            {% if row.bloque.es_receso %}
+                                <strong>RECESO</strong>
+                            {% elif cell.clase %}
+                                <strong>{{ cell.clase.materia.nombre }}</strong>
+                                <span>{{ cell.clase.grupo }}</span>
+                                <small>Aula {{ cell.clase.aula|default:"pendiente" }}</small>
+                            {% else %}
+                                <span>Libre</span>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% empty %}
+                    <div class="schedule-cell empty-board">Todavia no hay bloques de hora.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section class="detail-section">
         <h2>Asignar materia</h2>
         <form method="post" class="assignment-form">
             {% csrf_token %}

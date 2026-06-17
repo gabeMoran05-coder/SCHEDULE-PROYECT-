@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.db.models import Prefetch, Q
 from django.shortcuts import get_object_or_404, redirect, render
 
-from apps.horarios.models import FichaAsignacion
+from apps.horarios.models import BloqueHorario, DiaSemana, FichaAsignacion, HorarioClase
 
 from .forms import AlumnoForm, AsignacionMateriaForm, CicloEscolarForm, DocenteForm, GrupoForm, InstitucionForm, MateriaForm
 from .models import Alumno, AsignacionDocenteMateria, CicloEscolar, ContratoDocente, Docente, Grupo, Institucion, Materia
@@ -234,6 +234,23 @@ def docente_detalle(request, docente_id):
     asignaciones = contrato.asignaciones.select_related("materia").prefetch_related("grupos")
     horas_asignadas = sum(asignacion.horas_semanales for asignacion in asignaciones)
     horas_disponibles = contrato.horas_semanales - horas_asignadas
+    bloques = BloqueHorario.objects.filter(ciclo=contrato.ciclo)
+    clases = HorarioClase.objects.select_related("materia", "grupo", "bloque").filter(contrato=contrato, ciclo=contrato.ciclo)
+    clases_por_celda = {(clase.bloque_id, clase.dia): clase for clase in clases}
+    horario_docente = [
+        {
+            "bloque": bloque,
+            "cells": [
+                {
+                    "dia_value": dia_value,
+                    "dia_label": dia_label,
+                    "clase": clases_por_celda.get((bloque.id, dia_value)),
+                }
+                for dia_value, dia_label in DiaSemana.choices
+            ],
+        }
+        for bloque in bloques
+    ]
 
     context = {
         "docente": docente,
@@ -242,6 +259,8 @@ def docente_detalle(request, docente_id):
         "form": form,
         "horas_asignadas": horas_asignadas,
         "horas_disponibles": horas_disponibles,
+        "dias": DiaSemana.choices,
+        "horario_docente": horario_docente,
     }
     return render(request, "escuela/docentes/detalle.html", context)
 
