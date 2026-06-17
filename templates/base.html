@@ -23,7 +23,6 @@
                     <details class="school-switcher">
                         <summary>
                             <span>{{ nav_selected_institution.nombre|default:"Sin institucion" }}</span>
-                            <b>v</b>
                         </summary>
                         <div class="school-menu">
                             <form action="{% url 'escuela:seleccionar_institucion' %}" method="post">

@@ -154,7 +154,7 @@ textarea:focus {
     color: white;
     cursor: pointer;
     display: inline-flex;
-    gap: 7px;
+    gap: 0;
     list-style: none;
     min-height: 40px;
     padding: 9px 12px;
@@ -170,17 +170,12 @@ textarea:focus {
 }
 
 .school-switcher summary span {
-    font-weight: 800;
+    font-size: 16px;
+    font-weight: 700;
     max-width: 230px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-}
-
-.school-switcher summary b {
-    color: white;
-    font-size: 13px;
-    line-height: 1;
 }
 
 .school-menu {
@@ -229,13 +224,14 @@ textarea:focus {
 }
 
 .school-menu a {
-    background: var(--brand);
-    color: white;
+    background: #eaf6fd;
+    color: var(--brand-dark);
     text-align: center;
 }
 
 .school-menu a:hover {
-    background: var(--brand-dark);
+    background: var(--brand);
+    color: white;
 }
 
 .nav a,
