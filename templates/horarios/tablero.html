@@ -54,7 +54,7 @@
         {% endfor %}
     </aside>
 
-    <section class="schedule-board">
+    <section class="schedule-board view-complete" data-schedule-board>
         <div class="board-toolbar board-filter-panel" data-board-filters>
             <button class="filter-toggle" type="button" data-filter-toggle aria-expanded="true" title="Ocultar filtros">^</button>
             <div class="filter-canvas" data-filter-content>
@@ -69,6 +69,10 @@
                         <button class="group-filter-chip" type="button" data-filter-type="group" data-group="grupo-{{ grupo.id }}" data-group-code="{{ grupo.grado }}{{ grupo.letra }}" data-grade="{{ grupo.grado }}">{{ grupo.grado }}{{ grupo.letra }}</button>
                     {% endfor %}
                 </div>
+            </div>
+            <div class="view-switcher" aria-label="Cambiar vista del tablero">
+                <button class="view-mode-button" type="button" data-view-mode="single" title="Vista individual">▤</button>
+                <button class="view-mode-button active" type="button" data-view-mode="complete" title="Vista completa">▦</button>
             </div>
         </div>
 

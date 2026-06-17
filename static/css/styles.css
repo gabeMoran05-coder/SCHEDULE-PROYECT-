@@ -830,6 +830,15 @@ input[type="checkbox"] {
     min-width: 0;
 }
 
+.schedule-board.view-complete {
+    align-items: start;
+    grid-template-columns: repeat(auto-fit, minmax(430px, 1fr));
+}
+
+.schedule-board.view-complete .board-toolbar {
+    grid-column: 1 / -1;
+}
+
 .board-toolbar {
     background: var(--panel);
     border: 1px solid var(--line);
@@ -843,6 +852,38 @@ input[type="checkbox"] {
     background: var(--panel-soft);
     align-items: flex-start;
     position: relative;
+}
+
+.view-switcher {
+    align-items: center;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    display: inline-flex;
+    gap: 2px;
+    margin-left: auto;
+    padding: 3px;
+}
+
+.view-mode-button {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    color: var(--brand-dark);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-size: 18px;
+    height: 32px;
+    justify-content: center;
+    line-height: 1;
+    width: 36px;
+}
+
+.view-mode-button:hover,
+.view-mode-button.active {
+    background: #eaf6fd;
 }
 
 .board-filter-main {
@@ -940,6 +981,10 @@ input[type="checkbox"] {
     padding: 16px;
 }
 
+.schedule-board.view-complete .group-board {
+    padding: 10px;
+}
+
 .group-board-header {
     align-items: flex-start;
     display: flex;
@@ -967,6 +1012,11 @@ input[type="checkbox"] {
     min-width: 760px;
 }
 
+.schedule-board.view-complete .schedule-grid {
+    grid-template-columns: 58px repeat(5, minmax(58px, 1fr));
+    min-width: 0;
+}
+
 .schedule-cell {
     align-items: center;
     border-bottom: 1px solid #111827;
@@ -976,6 +1026,12 @@ input[type="checkbox"] {
     min-height: 48px;
     padding: 6px;
     text-align: center;
+}
+
+.schedule-board.view-complete .schedule-cell {
+    font-size: 12px;
+    min-height: 34px;
+    padding: 3px;
 }
 
 .schedule-cell:nth-child(6n + 1) {
@@ -988,9 +1044,17 @@ input[type="checkbox"] {
     font-weight: 700;
 }
 
+.schedule-board.view-complete .schedule-head {
+    font-size: 13px;
+}
+
 .time-cell {
     font-size: 18px;
     font-weight: 700;
+}
+
+.schedule-board.view-complete .time-cell {
+    font-size: 12px;
 }
 
 .drop-cell {
@@ -1016,6 +1080,21 @@ input[type="checkbox"] {
 
 .placed-card strong {
     line-height: 1.1;
+}
+
+.schedule-board.view-complete .placed-card {
+    border-left-width: 4px;
+    gap: 2px;
+    padding: 5px;
+}
+
+.schedule-board.view-complete .placed-card strong {
+    font-size: 11px;
+}
+
+.schedule-board.view-complete .placed-card span,
+.schedule-board.view-complete .placed-card small {
+    display: none;
 }
 
 .empty-board {

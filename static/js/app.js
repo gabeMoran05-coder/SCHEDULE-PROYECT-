@@ -117,6 +117,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const boardFilters = document.querySelector("[data-board-filters]");
     const groupBoards = document.querySelectorAll("[data-group-board]");
     const teacherTrays = document.querySelectorAll(".teacher-tray");
+    const scheduleBoard = document.querySelector("[data-schedule-board]");
 
     if (boardFilters && groupBoards.length) {
         const filterButtons = boardFilters.querySelectorAll("[data-filter-type]");
@@ -212,6 +213,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 filterToggle.textContent = isCollapsed ? "v" : "^";
             });
         }
+    }
+
+    if (scheduleBoard) {
+        document.querySelectorAll("[data-view-mode]").forEach((button) => {
+            button.addEventListener("click", () => {
+                const isComplete = button.dataset.viewMode === "complete";
+                scheduleBoard.classList.toggle("view-complete", isComplete);
+                document.querySelectorAll("[data-view-mode]").forEach((modeButton) => {
+                    modeButton.classList.toggle("active", modeButton === button);
+                });
+            });
+        });
     }
 
     const getCookie = (name) => {
