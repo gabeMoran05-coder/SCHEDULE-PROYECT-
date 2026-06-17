@@ -353,6 +353,22 @@ textarea:focus {
     padding: 7px 12px;
 }
 
+.danger-button {
+    background: #c0392b;
+    border: 0;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 800;
+    min-height: 34px;
+    padding: 7px 12px;
+}
+
+.danger-button:hover {
+    background: #992f24;
+}
+
 .status-pill {
     border-radius: 999px;
     display: inline-flex;
@@ -382,6 +398,123 @@ textarea:focus {
     color: var(--brand-dark);
     font-weight: 800;
     padding: 0 10px;
+}
+
+.detail-header {
+    align-items: center;
+    margin-bottom: 26px;
+}
+
+.header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.detail-grid {
+    display: grid;
+    gap: 20px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-bottom: 24px;
+}
+
+.detail-box,
+.detail-section {
+    background: var(--panel-soft);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 24px;
+}
+
+.detail-box h2,
+.detail-section h2 {
+    color: var(--muted);
+    font-size: 15px;
+    letter-spacing: 0.14em;
+    margin: 0 0 18px;
+    text-transform: uppercase;
+}
+
+.detail-list {
+    display: grid;
+    gap: 0;
+    margin: 0;
+}
+
+.detail-list div {
+    display: grid;
+    grid-template-columns: minmax(160px, 0.8fr) minmax(0, 1.2fr);
+    min-height: 38px;
+}
+
+.detail-list dt,
+.detail-list dd {
+    border-bottom: 1px solid var(--line);
+    margin: 0;
+    padding: 9px 0;
+}
+
+.detail-list dt {
+    color: var(--muted);
+    font-weight: 800;
+}
+
+.detail-list dd {
+    font-weight: 700;
+}
+
+.detail-section {
+    margin-top: 24px;
+}
+
+.section-title-row {
+    align-items: flex-start;
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.group-pill {
+    background: #dcf2ff;
+    border: 1px solid #9fd3f2;
+    border-radius: 999px;
+    color: var(--brand-dark);
+    font-weight: 800;
+    padding: 5px 10px;
+}
+
+.assignment-form {
+    max-width: 960px;
+}
+
+.span-2 {
+    grid-column: span 2;
+}
+
+.form-group ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.form-group li label {
+    align-items: center;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    display: inline-flex;
+    gap: 8px;
+    min-height: 38px;
+    padding: 8px 12px;
 }
 
 .form-grid {
@@ -554,6 +687,14 @@ input[type="checkbox"] {
 
     .form-grid {
         grid-template-columns: 1fr;
+    }
+
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .span-2 {
+        grid-column: auto;
     }
 
     .filter-grid {

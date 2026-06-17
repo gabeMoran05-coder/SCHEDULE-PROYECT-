@@ -1,10 +1,12 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 
-from .forms import AlumnoForm, DocenteForm, GrupoForm, InstitucionForm, MateriaForm
-from .models import Alumno, CicloEscolar, ContratoDocente, Docente, Grupo, Institucion, Materia
+from apps.horarios.models import FichaAsignacion
+
+from .forms import AlumnoForm, AsignacionMateriaForm, DocenteForm, GrupoForm, InstitucionForm, MateriaForm
+from .models import Alumno, AsignacionDocenteMateria, CicloEscolar, ContratoDocente, Docente, Grupo, Institucion, Materia
 
 
 @login_required
@@ -59,7 +61,7 @@ def alumno_crear(request):
 
 @login_required
 def docentes(request):
-    docentes_qs = Docente.objects.prefetch_related("contratos")
+    docentes_qs = Docente.objects.prefetch_related("contratos", "contratos__asignaciones")
     busqueda = request.GET.get("q", "").strip()
     estado = request.GET.get("estado", "")
 
@@ -81,6 +83,84 @@ def docentes(request):
         "escuela/docentes/index.html",
         {"docentes": docentes_qs, "busqueda": busqueda, "estado": estado},
     )
+
+
+def _contrato_activo_para_docente(docente):
+    ciclo_activo = CicloEscolar.objects.filter(activo=True).select_related("institucion").first()
+    if not ciclo_activo:
+        return None
+    contrato, _ = ContratoDocente.objects.get_or_create(
+        docente=docente,
+        institucion=ciclo_activo.institucion,
+        ciclo=ciclo_activo,
+        defaults={"horas_semanales": 0, "activo": True},
+    )
+    return contrato
+
+
+@login_required
+def docente_detalle(request, docente_id):
+    docente = get_object_or_404(Docente, id=docente_id)
+    contrato = _contrato_activo_para_docente(docente)
+
+    if not contrato:
+        messages.error(request, "Primero crea un ciclo escolar activo para asignar materias.")
+        return redirect("escuela:docentes")
+
+    if request.method == "POST":
+        action = request.POST.get("action")
+
+        if action == "asignar_materia":
+            form = AsignacionMateriaForm(request.POST, ciclo=contrato.ciclo)
+            if form.is_valid():
+                materia = form.cleaned_data["materia"]
+                asignacion = AsignacionDocenteMateria.objects.filter(contrato=contrato, materia=materia).first()
+                if asignacion is None:
+                    asignacion = form.save(commit=False)
+                    asignacion.contrato = contrato
+                else:
+                    asignacion.horas_semanales = form.cleaned_data["horas_semanales"]
+                    asignacion.notas = form.cleaned_data["notas"]
+
+                asignacion.save()
+                asignacion.grupos.set(form.cleaned_data["grupos"])
+
+                FichaAsignacion.objects.filter(asignacion=asignacion).exclude(
+                    grupo__in=form.cleaned_data["grupos"]
+                ).delete()
+                for grupo in form.cleaned_data["grupos"]:
+                    FichaAsignacion.objects.update_or_create(
+                        asignacion=asignacion,
+                        grupo=grupo,
+                        defaults={
+                            "horas_por_colocar": asignacion.horas_semanales,
+                            "aula": grupo.aula_base,
+                        },
+                    )
+
+                messages.success(request, "Materia asignada correctamente.")
+                return redirect("escuela:docente_detalle", docente_id=docente.id)
+        elif action == "quitar_materia":
+            asignacion = get_object_or_404(AsignacionDocenteMateria, id=request.POST.get("asignacion_id"), contrato=contrato)
+            asignacion.delete()
+            messages.success(request, "Materia desasignada correctamente.")
+            return redirect("escuela:docente_detalle", docente_id=docente.id)
+    else:
+        form = AsignacionMateriaForm(ciclo=contrato.ciclo)
+
+    asignaciones = contrato.asignaciones.select_related("materia").prefetch_related("grupos")
+    horas_asignadas = sum(asignacion.horas_semanales for asignacion in asignaciones)
+    horas_disponibles = contrato.horas_semanales - horas_asignadas
+
+    context = {
+        "docente": docente,
+        "contrato": contrato,
+        "asignaciones": asignaciones,
+        "form": form,
+        "horas_asignadas": horas_asignadas,
+        "horas_disponibles": horas_disponibles,
+    }
+    return render(request, "escuela/docentes/detalle.html", context)
 
 
 @login_required

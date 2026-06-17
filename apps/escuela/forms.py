@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Alumno, ContratoDocente, Docente, Grupo, Institucion, Materia, Tutor
+from .models import Alumno, AsignacionDocenteMateria, ContratoDocente, Docente, Grupo, Institucion, Materia, Tutor
 
 
 class AlumnoForm(forms.ModelForm):
@@ -69,3 +69,24 @@ class ContratoDocenteForm(forms.ModelForm):
     class Meta:
         model = ContratoDocente
         fields = ["docente", "institucion", "ciclo", "horas_semanales", "es_tutor", "activo"]
+
+
+class AsignacionMateriaForm(forms.ModelForm):
+    class Meta:
+        model = AsignacionDocenteMateria
+        fields = ["materia", "grupos", "horas_semanales", "notas"]
+        widgets = {
+            "grupos": forms.CheckboxSelectMultiple,
+        }
+
+    def __init__(self, *args, ciclo=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["materia"].queryset = Materia.objects.all().order_by("grado", "nombre")
+        self.fields["materia"].label = "Materia"
+        self.fields["grupos"].label = "Grupos donde la imparte"
+        self.fields["horas_semanales"].label = "Horas por semana"
+        self.fields["notas"].label = "Notas"
+        self.fields["horas_semanales"].min_value = 1
+        self.fields["horas_semanales"].max_value = 40
+        if ciclo:
+            self.fields["grupos"].queryset = Grupo.objects.filter(ciclo=ciclo).order_by("grado", "letra")

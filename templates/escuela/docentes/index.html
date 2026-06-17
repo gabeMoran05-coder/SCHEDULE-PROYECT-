@@ -45,6 +45,7 @@
                 <th>Correo</th>
                 <th>Telefono</th>
                 <th>Horas</th>
+                <th>Materias</th>
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -60,10 +61,15 @@
                             {% if contrato %}{{ contrato.horas_semanales }}{% else %}Sin contrato{% endif %}
                         {% endwith %}
                     </td>
-                    <td><span class="mini-button">Ver</span></td>
+                    <td>
+                        {% with contrato=docente.contratos.first %}
+                            {% if contrato %}{{ contrato.asignaciones.count }}{% else %}0{% endif %}
+                        {% endwith %}
+                    </td>
+                    <td><a class="mini-button" href="{% url 'escuela:docente_detalle' docente.id %}">Ver</a></td>
                 </tr>
             {% empty %}
-                <tr><td colspan="6">Todavia no hay docentes registrados.</td></tr>
+                <tr><td colspan="7">Todavia no hay docentes registrados.</td></tr>
             {% endfor %}
         </tbody>
     </table>

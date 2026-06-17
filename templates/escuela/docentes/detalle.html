@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}{{ docente }} | Sistema Secundaria{% endblock %}
+
+{% block content %}
+<section class="page-card">
+    <header class="page-header detail-header">
+        <div>
+            <h1>{{ docente.apellidos }} {{ docente.nombres }}</h1>
+            <p>No. empleado: {{ docente.numero_empleado|default:"Sin numero" }}</p>
+        </div>
+        <div class="header-actions">
+            <a class="button button-secondary" href="{% url 'escuela:docentes' %}">Volver</a>
+        </div>
+    </header>
+
+    <section class="detail-grid">
+        <article class="detail-box">
+            <h2>Datos del docente</h2>
+            <dl class="detail-list">
+                <div><dt>Correo</dt><dd>{{ docente.correo|default:"Sin correo" }}</dd></div>
+                <div><dt>Telefono</dt><dd>{{ docente.telefono|default:"Sin telefono" }}</dd></div>
+                <div><dt>Estado</dt><dd><span class="status-pill {% if docente.activo %}ok{% else %}off{% endif %}">{% if docente.activo %}Activo{% else %}Inactivo{% endif %}</span></dd></div>
+                <div><dt>Tutor</dt><dd>{% if contrato.es_tutor %}<span class="status-pill ok">Si</span>{% else %}<span class="status-pill off">No</span>{% endif %}</dd></div>
+            </dl>
+        </article>
+
+        <article class="detail-box">
+            <h2>Contrato del ciclo</h2>
+            <dl class="detail-list">
+                <div><dt>Institucion</dt><dd>{{ contrato.institucion.nombre }}</dd></div>
+                <div><dt>Ciclo</dt><dd>{{ contrato.ciclo.nombre }}</dd></div>
+                <div><dt>Horas contratadas</dt><dd><strong>{{ contrato.horas_semanales }} h</strong></dd></div>
+                <div><dt>Horas asignadas</dt><dd><strong>{{ horas_asignadas }} h</strong></dd></div>
+                <div><dt>Disponible</dt><dd><span class="status-pill {% if horas_disponibles >= 0 %}ok{% else %}off{% endif %}">{{ horas_disponibles }} h</span></dd></div>
+            </dl>
+        </article>
+    </section>
+
+    <section class="detail-section">
+        <div class="section-title-row">
+            <div>
+                <h2>Materias asignadas</h2>
+                <p class="muted">Estas materias generan fichas para el tablero de horarios.</p>
+            </div>
+        </div>
+
+        <div class="table-panel">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Materia</th>
+                        <th>Grado</th>
+                        <th>Grupos</th>
+                        <th>Horas</th>
+                        <th>Notas</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for asignacion in asignaciones %}
+                        <tr>
+                            <td><strong>{{ asignacion.materia.nombre }}</strong><br><span class="muted">{{ asignacion.materia.clave }}</span></td>
+                            <td>{{ asignacion.materia.grado }}</td>
+                            <td>
+                                <div class="pill-row">
+                                    {% for grupo in asignacion.grupos.all %}
+                                        <span class="group-pill">{{ grupo.grado }}{{ grupo.letra }}</span>
+                                    {% empty %}
+                                        <span class="muted">Sin grupos</span>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                            <td><strong>{{ asignacion.horas_semanales }} h</strong></td>
+                            <td>{{ asignacion.notas|default:"Sin notas" }}</td>
+                            <td>
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="quitar_materia">
+                                    <input type="hidden" name="asignacion_id" value="{{ asignacion.id }}">
+                                    <button class="danger-button" type="submit">Quitar</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="6">Este docente todavia no tiene materias asignadas.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="detail-section">
+        <h2>Asignar materia</h2>
+        <form method="post" class="assignment-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="asignar_materia">
+
+            {% if form.non_field_errors %}
+                <div class="alert error">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <fieldset class="form-fieldset">
+                <legend>Datos de la materia</legend>
+                <div class="form-grid">
+                    {% for field in form %}
+                        <div class="form-group {% if field.name == 'grupos' %}span-2{% endif %}">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% for error in field.errors %}
+                                <small class="field-error">{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </fieldset>
+
+            <div class="form-actions">
+                <button class="button" type="submit">Asignar materia</button>
+            </div>
+        </form>
+    </section>
+</section>
+{% endblock %}
