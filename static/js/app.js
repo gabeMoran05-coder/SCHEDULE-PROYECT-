@@ -55,7 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
         card.className = "assignment-card placed-card";
         card.draggable = true;
         card.style.setProperty("--card-color", sourceCard.style.getPropertyValue("--card-color") || "#0f766e");
-        ["fichaId", "groupId", "grade", "materiaId", "teacher", "materia", "groupLabel", "aula"].forEach((key) => {
+        ["fichaId", "groupId", "groupCode", "grade", "materiaId", "teacher", "materia", "groupLabel", "aula"].forEach((key) => {
             if (sourceCard.dataset[key]) {
                 card.dataset[key] = sourceCard.dataset[key];
             }
@@ -135,7 +135,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         };
 
-        const showTrayCards = ({ grade, groupId }) => {
+        const showTrayCards = ({ grade, groupId, groupCode }) => {
             teacherTrays.forEach((tray) => {
                 const cards = tray.querySelectorAll(".assignment-card[data-max-hours]");
                 let visibleCount = 0;
@@ -143,9 +143,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 cards.forEach((card) => {
                     const matchesGrade = !grade || card.dataset.grade === grade;
-                    const matchesGroup = !groupId || `grupo-${card.dataset.groupId}` === groupId;
+                    const matchesGroup = !groupId || `grupo-${card.dataset.groupId}` === groupId || card.dataset.groupCode === groupCode;
                     const isVisible = matchesGrade && matchesGroup;
                     card.hidden = !isVisible;
+                    card.classList.toggle("is-filtered-out", !isVisible);
 
                     if (isVisible) {
                         visibleCount += 1;
@@ -163,9 +164,9 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         };
 
-        const applyFilter = ({ grade, groupId }) => {
+        const applyFilter = ({ grade, groupId, groupCode }) => {
             showBoards({ grade, groupId });
-            showTrayCards({ grade, groupId });
+            showTrayCards({ grade, groupId, groupCode });
         };
 
         const getActiveFilter = () => {
@@ -176,7 +177,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (activeButton.dataset.filterType === "grade") {
                 return { grade: activeButton.dataset.grade };
             }
-            return { groupId: activeButton.dataset.group };
+            return { groupId: activeButton.dataset.group, groupCode: activeButton.dataset.groupCode };
         };
 
         filterButtons.forEach((button) => {
@@ -195,7 +196,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 if (type === "group") {
-                    applyFilter({ groupId: button.dataset.group });
+                    applyFilter({ groupId: button.dataset.group, groupCode: button.dataset.groupCode });
                 }
             });
         });

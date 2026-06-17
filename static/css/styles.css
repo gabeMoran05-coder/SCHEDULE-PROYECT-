@@ -811,6 +811,10 @@ input[type="checkbox"] {
     opacity: 0.58;
 }
 
+.assignment-card.is-filtered-out {
+    display: none !important;
+}
+
 .assignment-card.dragging {
     opacity: 0.55;
 }

@@ -32,6 +32,7 @@
                             style="--card-color: {{ ficha.color }};"
                             data-ficha-id="{{ ficha.id }}"
                             data-group-id="{{ ficha.grupo.id }}"
+                            data-group-code="{{ ficha.grupo.grado }}{{ ficha.grupo.letra }}"
                             data-grade="{{ ficha.grupo.grado }}"
                             data-materia-id="{{ ficha.asignacion.materia.id }}"
                             data-max-hours="{{ ficha.horas_por_colocar }}"
@@ -65,7 +66,7 @@
                 </div>
                 <div class="grade-chip-row">
                     {% for grupo in grupos %}
-                        <button class="group-filter-chip" type="button" data-filter-type="group" data-group="grupo-{{ grupo.id }}" data-grade="{{ grupo.grado }}">{{ grupo.grado }}{{ grupo.letra }}</button>
+                        <button class="group-filter-chip" type="button" data-filter-type="group" data-group="grupo-{{ grupo.id }}" data-group-code="{{ grupo.grado }}{{ grupo.letra }}" data-grade="{{ grupo.grado }}">{{ grupo.grado }}{{ grupo.letra }}</button>
                     {% endfor %}
                 </div>
             </div>
@@ -99,6 +100,7 @@
                                         style="--card-color: {{ cell.clase.ficha.color|default:'#0f766e' }};"
                                         data-ficha-id="{{ cell.clase.ficha.id }}"
                                         data-group-id="{{ cell.clase.grupo.id }}"
+                                        data-group-code="{{ cell.clase.grupo.grado }}{{ cell.clase.grupo.letra }}"
                                         data-grade="{{ cell.clase.grupo.grado }}"
                                         data-materia-id="{{ cell.clase.materia.id }}"
                                         data-teacher="{{ cell.clase.contrato.docente }}"
