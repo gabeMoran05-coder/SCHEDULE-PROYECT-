@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load table_helpers %}
 
 {% block title %}Grupos | Sistema Secundaria{% endblock %}
 
@@ -39,16 +40,23 @@
     </div>
 </form>
 
+<nav class="status-tabs">
+    <a class="{% if estado == 'activo' %}active{% endif %}" href="{% status_url 'activo' %}">Activos</a>
+    <a class="{% if estado == 'oculto' %}active{% endif %}" href="{% status_url 'oculto' %}">Ocultos</a>
+    <a class="{% if estado == 'todos' %}active{% endif %}" href="{% status_url 'todos' %}">Todos</a>
+</nav>
+
 <p class="result-count">Mostrando {{ grupos|length }} grupo(s)</p>
 
 <section class="table-panel">
     <table class="table">
         <thead>
             <tr>
-                <th>Grupo</th>
-                <th>Turno</th>
-                <th>Ciclo</th>
-                <th>Aula</th>
+                <th><a class="sort-link" href="{% sort_url 'grupo' %}">Grupo {% sort_arrow 'grupo' %}</a></th>
+                <th><a class="sort-link" href="{% sort_url 'turno' %}">Turno {% sort_arrow 'turno' %}</a></th>
+                <th><a class="sort-link" href="{% sort_url 'ciclo' %}">Ciclo {% sort_arrow 'ciclo' %}</a></th>
+                <th><a class="sort-link" href="{% sort_url 'aula' %}">Aula {% sort_arrow 'aula' %}</a></th>
+                <th><a class="sort-link" href="{% sort_url 'estado' %}">Activo {% sort_arrow 'estado' %}</a></th>
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -59,10 +67,20 @@
                     <td>{{ grupo.get_turno_display }}</td>
                     <td>{{ grupo.ciclo.nombre }}</td>
                     <td>{{ grupo.aula_base|default:"Sin aula" }}</td>
-                    <td><span class="mini-button">Ver</span></td>
+                    <td><span class="status-pill {% if grupo.activo %}ok{% else %}off{% endif %}">{% if grupo.activo %}Si{% else %}No{% endif %}</span></td>
+                    <td>
+                        <div class="action-stack">
+                            <a class="mini-button" href="{% url 'escuela:grupo_editar' grupo.id %}">Editar</a>
+                            <form method="post" action="{% url 'escuela:grupo_toggle_activo' grupo.id %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                <button class="danger-button" type="submit">{% if grupo.activo %}Ocultar{% else %}Restaurar{% endif %}</button>
+                            </form>
+                        </div>
+                    </td>
                 </tr>
             {% empty %}
-                <tr><td colspan="5">Todavia no hay grupos registrados.</td></tr>
+                <tr><td colspan="6">Todavia no hay grupos registrados.</td></tr>
             {% endfor %}
         </tbody>
     </table>

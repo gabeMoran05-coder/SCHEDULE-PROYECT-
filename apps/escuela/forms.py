@@ -50,7 +50,7 @@ class DocenteForm(forms.ModelForm):
 class GrupoForm(forms.ModelForm):
     class Meta:
         model = Grupo
-        fields = ["ciclo", "grado", "letra", "turno", "aula_base", "tutor"]
+        fields = ["ciclo", "grado", "letra", "turno", "aula_base", "tutor", "activo"]
 
     def __init__(self, *args, institucion=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -62,7 +62,7 @@ class GrupoForm(forms.ModelForm):
 class MateriaForm(forms.ModelForm):
     class Meta:
         model = Materia
-        fields = ["clave", "nombre", "grado", "horas_semanales"]
+        fields = ["clave", "nombre", "grado", "horas_semanales", "activo"]
 
     def __init__(self, *args, institucion=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -70,7 +70,10 @@ class MateriaForm(forms.ModelForm):
 
     def clean_clave(self):
         clave = self.cleaned_data["clave"]
-        if self.institucion and Materia.objects.filter(institucion=self.institucion, clave=clave).exists():
+        exists = Materia.objects.filter(institucion=self.institucion, clave=clave)
+        if self.instance.pk:
+            exists = exists.exclude(pk=self.instance.pk)
+        if self.institucion and exists.exists():
             raise forms.ValidationError("Ya existe una materia con esta clave en la escuela seleccionada.")
         return clave
 

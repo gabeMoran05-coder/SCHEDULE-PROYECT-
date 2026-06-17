@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load table_helpers %}
 
 {% block title %}Horarios | Sistema Secundaria{% endblock %}
 
@@ -14,12 +15,12 @@
     <table class="table">
         <thead>
             <tr>
-                <th>Grupo</th>
-                <th>Dia</th>
-                <th>Hora</th>
-                <th>Materia</th>
-                <th>Docente</th>
-                <th>Aula</th>
+                <th><a class="sort-link" href="{% sort_url 'grupo' %}">Grupo {% sort_arrow 'grupo' %}</a></th>
+                <th><a class="sort-link" href="{% sort_url 'dia' %}">Dia {% sort_arrow 'dia' %}</a></th>
+                <th><a class="sort-link" href="{% sort_url 'hora' %}">Hora {% sort_arrow 'hora' %}</a></th>
+                <th><a class="sort-link" href="{% sort_url 'materia' %}">Materia {% sort_arrow 'materia' %}</a></th>
+                <th><a class="sort-link" href="{% sort_url 'docente' %}">Docente {% sort_arrow 'docente' %}</a></th>
+                <th><a class="sort-link" href="{% sort_url 'aula' %}">Aula {% sort_arrow 'aula' %}</a></th>
             </tr>
         </thead>
         <tbody>

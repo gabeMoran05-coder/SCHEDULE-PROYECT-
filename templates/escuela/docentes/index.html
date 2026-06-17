@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load table_helpers %}
 
 {% block title %}Docentes | Sistema Secundaria{% endblock %}
 
@@ -22,9 +23,9 @@
         <div class="form-group">
             <label for="estado">Estado</label>
             <select id="estado" name="estado">
-                <option value="">-- Todos --</option>
+                <option value="todos" {% if estado == "todos" %}selected{% endif %}>-- Todos --</option>
                 <option value="activo" {% if estado == "activo" %}selected{% endif %}>Activos</option>
-                <option value="inactivo" {% if estado == "inactivo" %}selected{% endif %}>Inactivos</option>
+                <option value="oculto" {% if estado == "oculto" %}selected{% endif %}>Ocultos</option>
             </select>
         </div>
         <div class="filter-actions">
@@ -34,15 +35,21 @@
     </div>
 </form>
 
+<nav class="status-tabs">
+    <a class="{% if estado == 'activo' %}active{% endif %}" href="{% status_url 'activo' %}">Activos</a>
+    <a class="{% if estado == 'oculto' %}active{% endif %}" href="{% status_url 'oculto' %}">Ocultos</a>
+    <a class="{% if estado == 'todos' %}active{% endif %}" href="{% status_url 'todos' %}">Todos</a>
+</nav>
+
 <p class="result-count">Mostrando {{ docentes|length }} docente(s)</p>
 
 <section class="table-panel">
     <table class="table">
         <thead>
             <tr>
-                <th>No. empleado</th>
-                <th>Nombre</th>
-                <th>Correo</th>
+                <th><a class="sort-link" href="{% sort_url 'empleado' %}">No. empleado {% sort_arrow 'empleado' %}</a></th>
+                <th><a class="sort-link" href="{% sort_url 'nombre' %}">Nombre {% sort_arrow 'nombre' %}</a></th>
+                <th><a class="sort-link" href="{% sort_url 'correo' %}">Correo {% sort_arrow 'correo' %}</a></th>
                 <th>Telefono</th>
                 <th>Horas</th>
                 <th>Materias</th>
@@ -66,7 +73,17 @@
                             {% if contrato %}{{ contrato.asignaciones.count }}{% else %}0{% endif %}
                         {% endwith %}
                     </td>
-                    <td><a class="mini-button" href="{% url 'escuela:docente_detalle' docente.id %}">Ver</a></td>
+                    <td>
+                        <div class="action-stack">
+                            <a class="mini-button" href="{% url 'escuela:docente_detalle' docente.id %}">Ver</a>
+                            <a class="mini-button" href="{% url 'escuela:docente_editar' docente.id %}">Editar</a>
+                            <form method="post" action="{% url 'escuela:docente_toggle_activo' docente.id %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                <button class="danger-button" type="submit">{% if docente.activo %}Ocultar{% else %}Restaurar{% endif %}</button>
+                            </form>
+                        </div>
+                    </td>
                 </tr>
             {% empty %}
                 <tr><td colspan="7">Todavia no hay docentes registrados.</td></tr>

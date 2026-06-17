@@ -50,6 +50,25 @@ def _ensure_school_base(institucion):
     return ciclo
 
 
+def _apply_sort(request, queryset, allowed, default):
+    sort = request.GET.get("sort", default)
+    direction = request.GET.get("dir", "asc")
+    if sort not in allowed:
+        sort = default
+    order_field = allowed[sort]
+    if direction == "desc":
+        order_field = f"-{order_field}"
+    return queryset.order_by(order_field), sort, direction
+
+
+def _apply_estado(queryset, estado):
+    if estado == "oculto":
+        return queryset.filter(activo=False)
+    if estado == "todos":
+        return queryset
+    return queryset.filter(activo=True)
+
+
 @login_required
 def dashboard(request):
     institucion = get_selected_institution(request)
@@ -92,7 +111,7 @@ def alumnos(request):
     institucion = get_selected_institution(request)
     alumnos_qs = Alumno.objects.select_related("institucion", "tutor").filter(institucion=institucion)
     busqueda = request.GET.get("q", "").strip()
-    estado = request.GET.get("estado", "")
+    estado = request.GET.get("estado", "activo")
 
     if busqueda:
         alumnos_qs = alumnos_qs.filter(
@@ -101,16 +120,19 @@ def alumnos(request):
             | Q(apellidos__icontains=busqueda)
             | Q(tutor__nombre__icontains=busqueda)
         )
-    if estado == "activo":
-        alumnos_qs = alumnos_qs.filter(activo=True)
-    elif estado == "inactivo":
-        alumnos_qs = alumnos_qs.filter(activo=False)
+    alumnos_qs = _apply_estado(alumnos_qs, estado)
+    alumnos_qs, sort, direction = _apply_sort(
+        request,
+        alumnos_qs,
+        {"matricula": "matricula", "nombre": "apellidos", "tutor": "tutor__nombre", "estado": "activo"},
+        "nombre",
+    )
 
     alumnos_qs = alumnos_qs[:80]
     return render(
         request,
         "escuela/alumnos/index.html",
-        {"alumnos": alumnos_qs, "busqueda": busqueda, "estado": estado},
+        {"alumnos": alumnos_qs, "busqueda": busqueda, "estado": estado, "sort": sort, "dir": direction},
     )
 
 
@@ -128,6 +150,27 @@ def alumno_crear(request):
 
 
 @login_required
+def alumno_editar(request, alumno_id):
+    alumno = get_object_or_404(Alumno, id=alumno_id, institucion=get_selected_institution(request))
+    form = AlumnoForm(request.POST or None, instance=alumno)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Alumno actualizado correctamente.")
+        return redirect("escuela:alumnos")
+    return render(request, "escuela/formulario.html", {"form": form, "titulo": "Editar alumno", "volver_url": "escuela:alumnos"})
+
+
+@login_required
+def alumno_toggle_activo(request, alumno_id):
+    alumno = get_object_or_404(Alumno, id=alumno_id, institucion=get_selected_institution(request))
+    if request.method == "POST":
+        alumno.activo = not alumno.activo
+        alumno.save(update_fields=["activo"])
+        messages.success(request, "Alumno restaurado correctamente." if alumno.activo else "Alumno ocultado correctamente.")
+    return redirect(request.POST.get("next") or "escuela:alumnos")
+
+
+@login_required
 def docentes(request):
     institucion = get_selected_institution(request)
     ciclo = get_selected_cycle(request)
@@ -142,7 +185,7 @@ def docentes(request):
         .distinct()
     )
     busqueda = request.GET.get("q", "").strip()
-    estado = request.GET.get("estado", "")
+    estado = request.GET.get("estado", "activo")
 
     if busqueda:
         docentes_qs = docentes_qs.filter(
@@ -151,16 +194,19 @@ def docentes(request):
             | Q(apellidos__icontains=busqueda)
             | Q(correo__icontains=busqueda)
         )
-    if estado == "activo":
-        docentes_qs = docentes_qs.filter(activo=True)
-    elif estado == "inactivo":
-        docentes_qs = docentes_qs.filter(activo=False)
+    docentes_qs = _apply_estado(docentes_qs, estado)
+    docentes_qs, sort, direction = _apply_sort(
+        request,
+        docentes_qs,
+        {"empleado": "numero_empleado", "nombre": "apellidos", "correo": "correo", "estado": "activo"},
+        "nombre",
+    )
 
     docentes_qs = docentes_qs[:80]
     return render(
         request,
         "escuela/docentes/index.html",
-        {"docentes": docentes_qs, "busqueda": busqueda, "estado": estado},
+        {"docentes": docentes_qs, "busqueda": busqueda, "estado": estado, "sort": sort, "dir": direction},
     )
 
 
@@ -299,23 +345,52 @@ def docente_crear(request):
 
 
 @login_required
+def docente_editar(request, docente_id):
+    docente = get_object_or_404(Docente, id=docente_id, contratos__institucion=get_selected_institution(request))
+    form = DocenteForm(request.POST or None, instance=docente)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Docente actualizado correctamente.")
+        return redirect("escuela:docentes")
+    return render(request, "escuela/formulario.html", {"form": form, "titulo": "Editar docente", "volver_url": "escuela:docentes"})
+
+
+@login_required
+def docente_toggle_activo(request, docente_id):
+    docente = get_object_or_404(Docente, id=docente_id, contratos__institucion=get_selected_institution(request))
+    if request.method == "POST":
+        docente.activo = not docente.activo
+        docente.save(update_fields=["activo"])
+        messages.success(request, "Docente restaurado correctamente." if docente.activo else "Docente ocultado correctamente.")
+    return redirect(request.POST.get("next") or "escuela:docentes")
+
+
+@login_required
 def grupos(request):
     institucion = get_selected_institution(request)
     ciclo = get_selected_cycle(request)
     grupos_qs = Grupo.objects.select_related("ciclo", "ciclo__institucion").filter(ciclo=ciclo, ciclo__institucion=institucion)
     grado = request.GET.get("grado", "")
     turno = request.GET.get("turno", "")
+    estado = request.GET.get("estado", "activo")
 
     if grado:
         grupos_qs = grupos_qs.filter(grado=grado)
     if turno:
         grupos_qs = grupos_qs.filter(turno=turno)
+    grupos_qs = _apply_estado(grupos_qs, estado)
+    grupos_qs, sort, direction = _apply_sort(
+        request,
+        grupos_qs,
+        {"grupo": "grado", "turno": "turno", "ciclo": "ciclo__nombre", "aula": "aula_base", "estado": "activo"},
+        "grupo",
+    )
 
     grupos_qs = grupos_qs[:80]
     return render(
         request,
         "escuela/grupos/index.html",
-        {"grupos": grupos_qs, "grado": grado, "turno": turno},
+        {"grupos": grupos_qs, "grado": grado, "turno": turno, "estado": estado, "sort": sort, "dir": direction},
     )
 
 
@@ -331,22 +406,51 @@ def grupo_crear(request):
 
 
 @login_required
+def grupo_editar(request, grupo_id):
+    grupo = get_object_or_404(Grupo, id=grupo_id, ciclo__institucion=get_selected_institution(request))
+    form = GrupoForm(request.POST or None, instance=grupo, institucion=get_selected_institution(request))
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Grupo actualizado correctamente.")
+        return redirect("escuela:grupos")
+    return render(request, "escuela/formulario.html", {"form": form, "titulo": "Editar grupo", "volver_url": "escuela:grupos"})
+
+
+@login_required
+def grupo_toggle_activo(request, grupo_id):
+    grupo = get_object_or_404(Grupo, id=grupo_id, ciclo__institucion=get_selected_institution(request))
+    if request.method == "POST":
+        grupo.activo = not grupo.activo
+        grupo.save(update_fields=["activo"])
+        messages.success(request, "Grupo restaurado correctamente." if grupo.activo else "Grupo ocultado correctamente.")
+    return redirect(request.POST.get("next") or "escuela:grupos")
+
+
+@login_required
 def materias(request):
     institucion = get_selected_institution(request)
     materias_qs = Materia.objects.filter(institucion=institucion)
     busqueda = request.GET.get("q", "").strip()
     grado = request.GET.get("grado", "")
+    estado = request.GET.get("estado", "activo")
 
     if busqueda:
         materias_qs = materias_qs.filter(Q(clave__icontains=busqueda) | Q(nombre__icontains=busqueda))
     if grado:
         materias_qs = materias_qs.filter(grado=grado)
+    materias_qs = _apply_estado(materias_qs, estado)
+    materias_qs, sort, direction = _apply_sort(
+        request,
+        materias_qs,
+        {"clave": "clave", "nombre": "nombre", "grado": "grado", "horas": "horas_semanales", "estado": "activo"},
+        "grado",
+    )
 
     materias_qs = materias_qs[:80]
     return render(
         request,
         "escuela/materias/index.html",
-        {"materias": materias_qs, "busqueda": busqueda, "grado": grado},
+        {"materias": materias_qs, "busqueda": busqueda, "grado": grado, "estado": estado, "sort": sort, "dir": direction},
     )
 
 
@@ -361,6 +465,27 @@ def materia_crear(request):
         messages.success(request, "Materia registrada correctamente.")
         return redirect("escuela:materias")
     return render(request, "escuela/formulario.html", {"form": form, "titulo": "Agregar materia", "volver_url": "escuela:materias"})
+
+
+@login_required
+def materia_editar(request, materia_id):
+    materia = get_object_or_404(Materia, id=materia_id, institucion=get_selected_institution(request))
+    form = MateriaForm(request.POST or None, instance=materia, institucion=get_selected_institution(request))
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Materia actualizada correctamente.")
+        return redirect("escuela:materias")
+    return render(request, "escuela/formulario.html", {"form": form, "titulo": "Editar materia", "volver_url": "escuela:materias"})
+
+
+@login_required
+def materia_toggle_activo(request, materia_id):
+    materia = get_object_or_404(Materia, id=materia_id, institucion=get_selected_institution(request))
+    if request.method == "POST":
+        materia.activo = not materia.activo
+        materia.save(update_fields=["activo"])
+        messages.success(request, "Materia restaurada correctamente." if materia.activo else "Materia ocultada correctamente.")
+    return redirect(request.POST.get("next") or "escuela:materias")
 
 
 @login_required

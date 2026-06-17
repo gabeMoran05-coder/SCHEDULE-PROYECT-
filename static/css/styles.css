@@ -547,6 +547,52 @@ textarea:focus {
     padding: 7px 12px;
 }
 
+.sort-link {
+    align-items: center;
+    color: var(--muted);
+    display: inline-flex;
+    gap: 6px;
+}
+
+.sort-link:hover {
+    color: var(--brand-dark);
+}
+
+.status-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 16px 0 6px;
+}
+
+.status-tabs a {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--brand-dark);
+    font-weight: 700;
+    min-height: 36px;
+    padding: 8px 14px;
+}
+
+.status-tabs a:hover,
+.status-tabs a.active {
+    background: var(--brand);
+    border-color: var(--brand);
+    color: white;
+}
+
+.action-stack {
+    align-items: flex-start;
+    display: grid;
+    gap: 8px;
+    justify-items: start;
+}
+
+.action-stack form {
+    margin: 0;
+}
+
 .danger-button {
     background: #c0392b;
     border: 0;

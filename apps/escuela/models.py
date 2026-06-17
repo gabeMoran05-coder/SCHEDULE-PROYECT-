@@ -112,6 +112,7 @@ class Materia(models.Model):
     nombre = models.CharField(max_length=100)
     grado = models.PositiveSmallIntegerField()
     horas_semanales = models.PositiveSmallIntegerField(default=1)
+    activo = models.BooleanField(default=True)
 
     class Meta:
         ordering = ["grado", "nombre"]
@@ -133,6 +134,7 @@ class Grupo(models.Model):
     turno = models.CharField(max_length=20, choices=TURNO_CHOICES)
     aula_base = models.CharField(max_length=30, blank=True)
     tutor = models.ForeignKey(ContratoDocente, on_delete=models.SET_NULL, null=True, blank=True, related_name="grupos_tutorados")
+    activo = models.BooleanField(default=True)
 
     class Meta:
         unique_together = ["ciclo", "grado", "letra", "turno"]

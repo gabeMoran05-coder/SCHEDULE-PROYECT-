@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load table_helpers %}
 
 {% block title %}Alumnos | Sistema Secundaria{% endblock %}
 
@@ -22,9 +23,9 @@
         <div class="form-group">
             <label for="estado">Estado</label>
             <select id="estado" name="estado">
-                <option value="">-- Todos --</option>
+                <option value="todos" {% if estado == "todos" %}selected{% endif %}>-- Todos --</option>
                 <option value="activo" {% if estado == "activo" %}selected{% endif %}>Activos</option>
-                <option value="inactivo" {% if estado == "inactivo" %}selected{% endif %}>Inactivos</option>
+                <option value="oculto" {% if estado == "oculto" %}selected{% endif %}>Ocultos</option>
             </select>
         </div>
         <div class="filter-actions">
@@ -34,17 +35,23 @@
     </div>
 </form>
 
+<nav class="status-tabs">
+    <a class="{% if estado == 'activo' %}active{% endif %}" href="{% status_url 'activo' %}">Activos</a>
+    <a class="{% if estado == 'oculto' %}active{% endif %}" href="{% status_url 'oculto' %}">Ocultos</a>
+    <a class="{% if estado == 'todos' %}active{% endif %}" href="{% status_url 'todos' %}">Todos</a>
+</nav>
+
 <p class="result-count">Mostrando {{ alumnos|length }} alumno(s)</p>
 
 <section class="table-panel">
     <table class="table">
         <thead>
             <tr>
-                <th>Matricula</th>
-                <th>Nombre</th>
+                <th><a class="sort-link" href="{% sort_url 'matricula' %}">Matricula {% sort_arrow 'matricula' %}</a></th>
+                <th><a class="sort-link" href="{% sort_url 'nombre' %}">Nombre {% sort_arrow 'nombre' %}</a></th>
                 <th>Institucion</th>
-                <th>Tutor</th>
-                <th>Activo</th>
+                <th><a class="sort-link" href="{% sort_url 'tutor' %}">Tutor {% sort_arrow 'tutor' %}</a></th>
+                <th><a class="sort-link" href="{% sort_url 'estado' %}">Activo {% sort_arrow 'estado' %}</a></th>
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -56,7 +63,16 @@
                     <td>{{ alumno.institucion.nombre }}</td>
                     <td>{{ alumno.tutor|default:"Sin tutor" }}</td>
                     <td><span class="status-pill {% if alumno.activo %}ok{% else %}off{% endif %}">{% if alumno.activo %}Si{% else %}No{% endif %}</span></td>
-                    <td><span class="mini-button">Ver</span></td>
+                    <td>
+                        <div class="action-stack">
+                            <a class="mini-button" href="{% url 'escuela:alumno_editar' alumno.id %}">Editar</a>
+                            <form method="post" action="{% url 'escuela:alumno_toggle_activo' alumno.id %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                <button class="danger-button" type="submit">{% if alumno.activo %}Ocultar{% else %}Restaurar{% endif %}</button>
+                            </form>
+                        </div>
+                    </td>
                 </tr>
             {% empty %}
                 <tr><td colspan="6">Todavia no hay alumnos registrados.</td></tr>

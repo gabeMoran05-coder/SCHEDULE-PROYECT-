@@ -16,8 +16,24 @@ from .models import BloqueHorario, DiaSemana, FichaAsignacion, HorarioClase, Hor
 @login_required
 def index(request):
     institucion = get_selected_institution(request)
-    horarios = HorarioClase.objects.select_related("grupo", "materia", "contrato__docente", "bloque").filter(ciclo__institucion=institucion)[:80]
-    return render(request, "horarios/index.html", {"horarios": horarios})
+    horarios = HorarioClase.objects.select_related("grupo", "materia", "contrato__docente", "bloque").filter(ciclo__institucion=institucion)
+    allowed_sort = {
+        "grupo": "grupo__grado",
+        "dia": "dia",
+        "hora": "bloque__orden",
+        "materia": "materia__nombre",
+        "docente": "contrato__docente__apellidos",
+        "aula": "aula",
+    }
+    sort = request.GET.get("sort", "grupo")
+    direction = request.GET.get("dir", "asc")
+    if sort not in allowed_sort:
+        sort = "grupo"
+    order_field = allowed_sort[sort]
+    if direction == "desc":
+        order_field = f"-{order_field}"
+    horarios = horarios.order_by(order_field)[:80]
+    return render(request, "horarios/index.html", {"horarios": horarios, "sort": sort, "dir": direction})
 
 
 @login_required
