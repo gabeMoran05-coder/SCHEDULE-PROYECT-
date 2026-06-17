@@ -127,29 +127,12 @@ textarea:focus {
     background: var(--brand);
     color: white;
     display: flex;
-    gap: 28px;
+    gap: 18px;
     min-height: 76px;
-    padding: 0 40px;
+    padding: 0 48px;
     position: sticky;
     top: 0;
     z-index: 20;
-}
-
-.brand {
-    align-items: baseline;
-    display: flex;
-    gap: 10px;
-    min-width: max-content;
-}
-
-.brand strong {
-    font-size: 22px;
-}
-
-.brand span {
-    color: #d7efff;
-    font-size: 18px;
-    font-weight: 700;
 }
 
 .nav {
@@ -157,42 +140,102 @@ textarea:focus {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
+    width: 100%;
 }
 
 .school-switcher {
-    align-items: center;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 9px;
-    display: flex;
-    gap: 6px;
-    min-height: 38px;
-    padding: 4px;
+    margin-left: auto;
+    position: relative;
 }
 
-.school-switcher select {
-    background: white;
-    border: 0;
-    border-radius: 6px;
-    color: var(--ink);
+.school-switcher summary {
+    align-items: center;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    display: inline-flex;
+    gap: 7px;
+    list-style: none;
+    min-height: 40px;
+    padding: 9px 12px;
+}
+
+.school-switcher summary::-webkit-details-marker {
+    display: none;
+}
+
+.school-switcher summary:hover,
+.school-switcher[open] summary {
+    background: rgba(255, 255, 255, 0.16);
+}
+
+.school-switcher summary span {
     font-weight: 800;
     max-width: 230px;
-    min-height: 30px;
-    min-width: 170px;
-    padding: 4px 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.school-switcher a {
-    align-items: center;
+.school-switcher summary b {
+    color: white;
+    font-size: 13px;
+    line-height: 1;
+}
+
+.school-menu {
     background: white;
-    border-radius: 999px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: 0 18px 40px rgba(9, 61, 97, 0.18);
+    display: grid;
+    gap: 6px;
+    min-width: 260px;
+    padding: 8px;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    z-index: 30;
+}
+
+.school-menu form {
+    display: grid;
+    gap: 4px;
+}
+
+.school-menu button,
+.school-menu a,
+.empty-school {
+    border: 0;
+    border-radius: 7px;
+    color: var(--ink);
+    display: block;
+    font: inherit;
+    font-weight: 700;
+    padding: 10px 12px;
+    text-align: left;
+    width: 100%;
+}
+
+.school-menu button {
+    background: transparent;
+    cursor: pointer;
+}
+
+.school-menu button:hover,
+.school-menu button.selected {
+    background: #eaf6fd;
     color: var(--brand-dark);
-    display: inline-flex;
-    font-size: 18px;
-    font-weight: 900;
-    height: 30px;
-    justify-content: center;
-    width: 30px;
+}
+
+.school-menu a {
+    background: var(--brand);
+    color: white;
+    text-align: center;
+}
+
+.school-menu a:hover {
+    background: var(--brand-dark);
 }
 
 .nav a,

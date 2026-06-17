@@ -11,10 +11,6 @@
     {% if user.is_authenticated %}
         <div class="layout">
             <header class="topbar">
-                <div class="brand">
-                    <strong>Secundaria</strong>
-                    <span>/ Sistema escolar</span>
-                </div>
                 <nav class="nav">
                     <a href="{% url 'escuela:dashboard' %}">Inicio</a>
                     <a href="{% url 'escuela:alumnos' %}">Alumnos</a>
@@ -24,20 +20,26 @@
                     <a href="{% url 'horarios:index' %}">Horarios</a>
                     <a href="{% url 'horarios:tablero' %}">Tablero</a>
                     <a href="{% url 'usuarios:perfil' %}">Perfil</a>
-                    <form class="school-switcher" action="{% url 'escuela:seleccionar_institucion' %}" method="post">
-                        {% csrf_token %}
-                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                        <select id="school-select" name="institucion_id" onchange="this.form.submit()" aria-label="Institucion actual">
-                            {% for institucion in nav_instituciones %}
-                                <option value="{{ institucion.id }}" {% if nav_selected_institution and institucion.id == nav_selected_institution.id %}selected{% endif %}>
-                                    {{ institucion.nombre }}
-                                </option>
-                            {% empty %}
-                                <option value="">Sin instituciones</option>
-                            {% endfor %}
-                        </select>
-                        <a href="{% url 'escuela:institucion_crear' %}" title="Agregar institucion">+</a>
-                    </form>
+                    <details class="school-switcher">
+                        <summary>
+                            <span>{{ nav_selected_institution.nombre|default:"Sin institucion" }}</span>
+                            <b>v</b>
+                        </summary>
+                        <div class="school-menu">
+                            <form action="{% url 'escuela:seleccionar_institucion' %}" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                {% for institucion in nav_instituciones %}
+                                    <button class="{% if nav_selected_institution and institucion.id == nav_selected_institution.id %}selected{% endif %}" name="institucion_id" value="{{ institucion.id }}" type="submit">
+                                        {{ institucion.nombre }}
+                                    </button>
+                                {% empty %}
+                                    <span class="empty-school">Sin instituciones</span>
+                                {% endfor %}
+                            </form>
+                            <a href="{% url 'escuela:institucion_crear' %}">Agregar escuela</a>
+                        </div>
+                    </details>
                     <form action="{% url 'usuarios:logout' %}" method="post">
                         {% csrf_token %}
                         <button type="submit">Cerrar sesion</button>
