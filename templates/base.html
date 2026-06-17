@@ -46,6 +46,26 @@
                 </nav>
             </header>
             <main class="main">
+                <section class="cycle-strip">
+                    <span>Ciclo escolar</span>
+                    <details class="cycle-switcher">
+                        <summary>{{ nav_selected_cycle.nombre|default:"Sin ciclo" }}</summary>
+                        <div class="cycle-menu">
+                            <form action="{% url 'escuela:seleccionar_ciclo' %}" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                {% for ciclo in nav_ciclos %}
+                                    <button class="{% if nav_selected_cycle and ciclo.id == nav_selected_cycle.id %}selected{% endif %}" name="ciclo_id" value="{{ ciclo.id }}" type="submit">
+                                        {{ ciclo.nombre }}
+                                    </button>
+                                {% empty %}
+                                    <span class="empty-school">Sin ciclos</span>
+                                {% endfor %}
+                            </form>
+                            <a href="{% url 'escuela:ciclo_crear' %}">Agregar ciclo</a>
+                        </div>
+                    </details>
+                </section>
                 {% if messages %}
                     <div class="messages">
                         {% for message in messages %}

@@ -268,6 +268,98 @@ textarea:focus {
     padding: 78px 24px 42px;
 }
 
+.cycle-strip {
+    align-items: center;
+    display: inline-flex;
+    gap: 10px;
+    margin: 0 0 18px;
+    position: relative;
+}
+
+.cycle-strip > span {
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.cycle-switcher {
+    position: relative;
+}
+
+.cycle-switcher summary {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--brand-dark);
+    cursor: pointer;
+    font-weight: 700;
+    list-style: none;
+    min-width: 135px;
+    padding: 9px 12px;
+}
+
+.cycle-switcher summary::-webkit-details-marker {
+    display: none;
+}
+
+.cycle-switcher summary:hover,
+.cycle-switcher[open] summary {
+    background: #f6fbff;
+}
+
+.cycle-menu {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: 0 18px 40px rgba(9, 61, 97, 0.16);
+    display: grid;
+    gap: 6px;
+    left: 0;
+    min-width: 220px;
+    padding: 8px;
+    position: absolute;
+    top: calc(100% + 8px);
+    z-index: 25;
+}
+
+.cycle-menu form {
+    display: grid;
+    gap: 4px;
+}
+
+.cycle-menu button,
+.cycle-menu a {
+    border: 0;
+    border-radius: 7px;
+    color: var(--brand-dark);
+    display: block;
+    font: inherit;
+    font-weight: 700;
+    padding: 10px 12px;
+    text-align: left;
+    width: 100%;
+}
+
+.cycle-menu button {
+    background: transparent;
+    cursor: pointer;
+}
+
+.cycle-menu button:hover,
+.cycle-menu button.selected,
+.cycle-menu a {
+    background: #eaf6fd;
+}
+
+.cycle-menu a {
+    text-align: center;
+}
+
+.cycle-menu a:hover {
+    background: var(--brand);
+    color: white;
+}
+
 .page-header {
     display: flex;
     align-items: flex-start;

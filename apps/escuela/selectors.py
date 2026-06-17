@@ -20,8 +20,15 @@ def get_selected_cycle(request):
     institucion = get_selected_institution(request)
     if not institucion:
         return None
-    return (
-        CicloEscolar.objects.filter(institucion=institucion, activo=True)
-        .select_related("institucion")
-        .first()
-    )
+    queryset = CicloEscolar.objects.filter(institucion=institucion).select_related("institucion")
+    selected_id = request.session.get("selected_cycle_id")
+
+    if selected_id:
+        ciclo = queryset.filter(id=selected_id).first()
+        if ciclo:
+            return ciclo
+
+    ciclo = queryset.filter(activo=True).first() or queryset.order_by("-nombre").first()
+    if ciclo:
+        request.session["selected_cycle_id"] = ciclo.id
+    return ciclo

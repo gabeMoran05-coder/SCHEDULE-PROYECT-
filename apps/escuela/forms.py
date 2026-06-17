@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Alumno, AsignacionDocenteMateria, ContratoDocente, Docente, Grupo, Institucion, Materia, Tutor
+from .models import Alumno, AsignacionDocenteMateria, CicloEscolar, ContratoDocente, Docente, Grupo, Institucion, Materia, Tutor
 
 
 class AlumnoForm(forms.ModelForm):
@@ -79,6 +79,26 @@ class InstitucionForm(forms.ModelForm):
     class Meta:
         model = Institucion
         fields = ["nombre", "clave_cct", "direccion", "activa"]
+
+
+class CicloEscolarForm(forms.ModelForm):
+    class Meta:
+        model = CicloEscolar
+        fields = ["nombre", "fecha_inicio", "fecha_fin", "activo"]
+        widgets = {
+            "fecha_inicio": forms.DateInput(attrs={"type": "date"}),
+            "fecha_fin": forms.DateInput(attrs={"type": "date"}),
+        }
+
+    def __init__(self, *args, institucion=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.institucion = institucion
+
+    def clean_nombre(self):
+        nombre = self.cleaned_data["nombre"]
+        if self.institucion and CicloEscolar.objects.filter(institucion=self.institucion, nombre=nombre).exists():
+            raise forms.ValidationError("Ya existe un ciclo con ese nombre en la escuela seleccionada.")
+        return nombre
 
 
 class ContratoDocenteForm(forms.ModelForm):
