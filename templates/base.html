@@ -47,9 +47,11 @@
             </header>
             <main class="main">
                 <section class="cycle-strip">
-                    <span>Ciclo escolar</span>
+                    <span>Periodo escolar</span>
                     <details class="cycle-switcher">
-                        <summary>{{ nav_selected_cycle.nombre|default:"Sin ciclo" }}</summary>
+                        <summary>
+                            <span>{{ nav_selected_cycle.nombre|default:"Sin ciclo" }}</span>
+                        </summary>
                         <div class="cycle-menu">
                             <form action="{% url 'escuela:seleccionar_ciclo' %}" method="post">
                                 {% csrf_token %}

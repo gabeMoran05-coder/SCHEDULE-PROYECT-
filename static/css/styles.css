@@ -270,16 +270,19 @@ textarea:focus {
 
 .cycle-strip {
     align-items: center;
-    display: inline-flex;
+    display: flex;
     gap: 10px;
-    margin: 0 0 18px;
+    justify-content: flex-end;
+    margin: -52px 0 18px;
     position: relative;
+    z-index: 15;
 }
 
 .cycle-strip > span {
-    color: var(--muted);
-    font-size: 14px;
+    color: var(--brand-dark);
+    font-size: 13px;
     font-weight: 700;
+    opacity: 0.82;
 }
 
 .cycle-switcher {
@@ -287,14 +290,19 @@ textarea:focus {
 }
 
 .cycle-switcher summary {
-    background: white;
-    border: 1px solid var(--line);
+    align-items: center;
+    background: rgba(255, 255, 255, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.95);
     border-radius: 8px;
+    box-shadow: 0 8px 20px rgba(9, 61, 97, 0.08);
     color: var(--brand-dark);
     cursor: pointer;
+    display: inline-flex;
+    font-size: 16px;
     font-weight: 700;
     list-style: none;
-    min-width: 135px;
+    min-height: 40px;
+    min-width: 142px;
     padding: 9px 12px;
 }
 
@@ -304,7 +312,14 @@ textarea:focus {
 
 .cycle-switcher summary:hover,
 .cycle-switcher[open] summary {
-    background: #f6fbff;
+    background: white;
+}
+
+.cycle-switcher summary span {
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .cycle-menu {
@@ -314,7 +329,7 @@ textarea:focus {
     box-shadow: 0 18px 40px rgba(9, 61, 97, 0.16);
     display: grid;
     gap: 6px;
-    left: 0;
+    right: 0;
     min-width: 220px;
     padding: 8px;
     position: absolute;
@@ -349,6 +364,7 @@ textarea:focus {
 .cycle-menu button.selected,
 .cycle-menu a {
     background: #eaf6fd;
+    color: var(--brand-dark);
 }
 
 .cycle-menu a {
