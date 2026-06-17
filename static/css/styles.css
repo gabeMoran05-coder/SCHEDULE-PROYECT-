@@ -97,6 +97,15 @@ textarea {
     background: var(--brand-dark);
 }
 
+.button-secondary {
+    background: #e5e7eb;
+    color: var(--ink);
+}
+
+.button-secondary:hover {
+    background: #d1d5db;
+}
+
 .layout {
     display: grid;
     grid-template-columns: 260px minmax(0, 1fr);
@@ -208,6 +217,40 @@ textarea {
 .alert.error {
     background: #fef3f2;
     color: var(--danger);
+}
+
+.alert.success {
+    background: #ecfdf3;
+    color: #067647;
+}
+
+.messages {
+    margin-bottom: 16px;
+}
+
+.form-panel {
+    max-width: 980px;
+}
+
+.form-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.field-error {
+    color: var(--danger);
+}
+
+input[type="checkbox"] {
+    width: auto;
 }
 
 .scheduler-shell {
@@ -356,6 +399,10 @@ textarea {
 
     .page-header {
         display: grid;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
     }
 
     .scheduler-shell {

@@ -8,6 +8,7 @@
         <h1>Alumnos</h1>
         <p>Registro principal de estudiantes.</p>
     </div>
+    <a class="button" href="{% url 'escuela:alumno_crear' %}">Agregar alumno</a>
 </header>
 
 <section class="content-panel">
@@ -16,6 +17,7 @@
             <tr>
                 <th>Matricula</th>
                 <th>Nombre</th>
+                <th>Institucion</th>
                 <th>Tutor</th>
                 <th>Activo</th>
             </tr>
@@ -25,11 +27,12 @@
                 <tr>
                     <td>{{ alumno.matricula }}</td>
                     <td>{{ alumno.apellidos }} {{ alumno.nombres }}</td>
+                    <td>{{ alumno.institucion.nombre }}</td>
                     <td>{{ alumno.tutor|default:"Sin tutor" }}</td>
                     <td>{% if alumno.activo %}Si{% else %}No{% endif %}</td>
                 </tr>
             {% empty %}
-                <tr><td colspan="4">Todavia no hay alumnos registrados.</td></tr>
+                <tr><td colspan="5">Todavia no hay alumnos registrados.</td></tr>
             {% endfor %}
         </tbody>
     </table>
