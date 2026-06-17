@@ -212,28 +212,6 @@ textarea:focus {
     width: 100%;
 }
 
-.school-menu button {
-    background: transparent;
-    cursor: pointer;
-}
-
-.school-menu button:hover,
-.school-menu button.selected {
-    background: #eaf6fd;
-    color: var(--brand-dark);
-}
-
-.school-menu a {
-    background: #eaf6fd;
-    color: var(--brand-dark);
-    text-align: center;
-}
-
-.school-menu a:hover {
-    background: var(--brand);
-    color: white;
-}
-
 .nav a,
 .nav button {
     border: 0;
@@ -252,6 +230,35 @@ textarea:focus {
 .nav button:hover,
 .nav .active {
     background: rgba(255, 255, 255, 0.16);
+    color: white;
+}
+
+.nav .school-menu button,
+.nav .school-menu a,
+.nav .school-menu .empty-school {
+    color: var(--brand-dark);
+    display: block;
+}
+
+.nav .school-menu button {
+    background: transparent;
+    cursor: pointer;
+}
+
+.nav .school-menu button:hover,
+.nav .school-menu button.selected {
+    background: #eaf6fd;
+    color: var(--brand-dark);
+}
+
+.nav .school-menu a {
+    background: #eaf6fd;
+    color: var(--brand-dark);
+    text-align: center;
+}
+
+.nav .school-menu a:hover {
+    background: var(--brand);
     color: white;
 }
 
