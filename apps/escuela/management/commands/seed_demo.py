@@ -1,5 +1,6 @@
 from datetime import time
 
+from django.contrib.auth.models import Group, User
 from django.core.management.base import BaseCommand
 
 from apps.escuela.models import CicloEscolar, Grupo, Institucion, Materia, Periodo
@@ -10,6 +11,30 @@ class Command(BaseCommand):
     help = "Crea datos base para probar el sistema escolar."
 
     def handle(self, *args, **options):
+        admin_user, _ = User.objects.update_or_create(
+            username="Admin",
+            defaults={
+                "email": "admin@secundaria.local",
+                "is_staff": True,
+                "is_superuser": True,
+            },
+        )
+        admin_user.set_password("12345")
+        admin_user.save()
+
+        directivo_group, _ = Group.objects.get_or_create(name="Directivo")
+        directivo_user, _ = User.objects.update_or_create(
+            username="Directivo",
+            defaults={
+                "email": "directivo@secundaria.local",
+                "is_staff": True,
+                "is_superuser": False,
+            },
+        )
+        directivo_user.set_password("12345")
+        directivo_user.groups.add(directivo_group)
+        directivo_user.save()
+
         institucion, _ = Institucion.objects.get_or_create(
             nombre="Ricardo Flores Magon",
             defaults={"clave_cct": "PENDIENTE", "activa": True},
