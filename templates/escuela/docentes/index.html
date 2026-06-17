@@ -3,15 +3,40 @@
 {% block title %}Docentes | Sistema Secundaria{% endblock %}
 
 {% block content %}
+<section class="page-card">
 <header class="page-header">
     <div>
         <h1>Docentes</h1>
         <p>Personal docente registrado.</p>
     </div>
-    <a class="button" href="{% url 'escuela:docente_crear' %}">Agregar docente</a>
+    <a class="fab-button" href="{% url 'escuela:docente_crear' %}" title="Agregar docente">+</a>
 </header>
 
-<section class="content-panel">
+<form class="filter-panel" method="get">
+    <strong>Filtros</strong>
+    <div class="filter-grid">
+        <div class="form-group">
+            <label for="q">Nombre</label>
+            <input id="q" name="q" value="{{ busqueda }}" placeholder="Buscar por nombre...">
+        </div>
+        <div class="form-group">
+            <label for="estado">Estado</label>
+            <select id="estado" name="estado">
+                <option value="">-- Todos --</option>
+                <option value="activo" {% if estado == "activo" %}selected{% endif %}>Activos</option>
+                <option value="inactivo" {% if estado == "inactivo" %}selected{% endif %}>Inactivos</option>
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button class="button" type="submit">Filtrar</button>
+            <a class="button button-secondary" href="{% url 'escuela:docentes' %}">Limpiar</a>
+        </div>
+    </div>
+</form>
+
+<p class="result-count">Mostrando {{ docentes|length }} docente(s)</p>
+
+<section class="table-panel">
     <table class="table">
         <thead>
             <tr>
@@ -20,6 +45,7 @@
                 <th>Correo</th>
                 <th>Telefono</th>
                 <th>Horas</th>
+                <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
@@ -34,11 +60,13 @@
                             {% if contrato %}{{ contrato.horas_semanales }}{% else %}Sin contrato{% endif %}
                         {% endwith %}
                     </td>
+                    <td><span class="mini-button">Ver</span></td>
                 </tr>
             {% empty %}
-                <tr><td colspan="5">Todavia no hay docentes registrados.</td></tr>
+                <tr><td colspan="6">Todavia no hay docentes registrados.</td></tr>
             {% endfor %}
         </tbody>
     </table>
+</section>
 </section>
 {% endblock %}

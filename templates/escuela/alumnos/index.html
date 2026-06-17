@@ -3,15 +3,40 @@
 {% block title %}Alumnos | Sistema Secundaria{% endblock %}
 
 {% block content %}
+<section class="page-card">
 <header class="page-header">
     <div>
         <h1>Alumnos</h1>
         <p>Registro principal de estudiantes.</p>
     </div>
-    <a class="button" href="{% url 'escuela:alumno_crear' %}">Agregar alumno</a>
+    <a class="fab-button" href="{% url 'escuela:alumno_crear' %}" title="Agregar alumno">+</a>
 </header>
 
-<section class="content-panel">
+<form class="filter-panel" method="get">
+    <strong>Filtros</strong>
+    <div class="filter-grid">
+        <div class="form-group">
+            <label for="q">Nombre o matricula</label>
+            <input id="q" name="q" value="{{ busqueda }}" placeholder="Buscar alumno...">
+        </div>
+        <div class="form-group">
+            <label for="estado">Estado</label>
+            <select id="estado" name="estado">
+                <option value="">-- Todos --</option>
+                <option value="activo" {% if estado == "activo" %}selected{% endif %}>Activos</option>
+                <option value="inactivo" {% if estado == "inactivo" %}selected{% endif %}>Inactivos</option>
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button class="button" type="submit">Filtrar</button>
+            <a class="button button-secondary" href="{% url 'escuela:alumnos' %}">Limpiar</a>
+        </div>
+    </div>
+</form>
+
+<p class="result-count">Mostrando {{ alumnos|length }} alumno(s)</p>
+
+<section class="table-panel">
     <table class="table">
         <thead>
             <tr>
@@ -20,6 +45,7 @@
                 <th>Institucion</th>
                 <th>Tutor</th>
                 <th>Activo</th>
+                <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
@@ -29,12 +55,14 @@
                     <td>{{ alumno.apellidos }} {{ alumno.nombres }}</td>
                     <td>{{ alumno.institucion.nombre }}</td>
                     <td>{{ alumno.tutor|default:"Sin tutor" }}</td>
-                    <td>{% if alumno.activo %}Si{% else %}No{% endif %}</td>
+                    <td><span class="status-pill {% if alumno.activo %}ok{% else %}off{% endif %}">{% if alumno.activo %}Si{% else %}No{% endif %}</span></td>
+                    <td><span class="mini-button">Ver</span></td>
                 </tr>
             {% empty %}
-                <tr><td colspan="5">Todavia no hay alumnos registrados.</td></tr>
+                <tr><td colspan="6">Todavia no hay alumnos registrados.</td></tr>
             {% endfor %}
         </tbody>
     </table>
+</section>
 </section>
 {% endblock %}

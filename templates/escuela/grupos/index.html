@@ -3,15 +3,45 @@
 {% block title %}Grupos | Sistema Secundaria{% endblock %}
 
 {% block content %}
+<section class="page-card">
 <header class="page-header">
     <div>
         <h1>Grupos</h1>
         <p>Grados, letras, turnos y ciclo escolar.</p>
     </div>
-    <a class="button" href="{% url 'escuela:grupo_crear' %}">Agregar grupo</a>
+    <a class="fab-button" href="{% url 'escuela:grupo_crear' %}" title="Agregar grupo">+</a>
 </header>
 
-<section class="content-panel">
+<form class="filter-panel" method="get">
+    <strong>Filtros</strong>
+    <div class="filter-grid">
+        <div class="form-group">
+            <label for="grado">Grado</label>
+            <select id="grado" name="grado">
+                <option value="">-- Todos --</option>
+                <option value="1" {% if grado == "1" %}selected{% endif %}>1ro</option>
+                <option value="2" {% if grado == "2" %}selected{% endif %}>2do</option>
+                <option value="3" {% if grado == "3" %}selected{% endif %}>3ro</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="turno">Turno</label>
+            <select id="turno" name="turno">
+                <option value="">-- Todos --</option>
+                <option value="MATUTINO" {% if turno == "MATUTINO" %}selected{% endif %}>Matutino</option>
+                <option value="VESPERTINO" {% if turno == "VESPERTINO" %}selected{% endif %}>Vespertino</option>
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button class="button" type="submit">Filtrar</button>
+            <a class="button button-secondary" href="{% url 'escuela:grupos' %}">Limpiar</a>
+        </div>
+    </div>
+</form>
+
+<p class="result-count">Mostrando {{ grupos|length }} grupo(s)</p>
+
+<section class="table-panel">
     <table class="table">
         <thead>
             <tr>
@@ -19,6 +49,7 @@
                 <th>Turno</th>
                 <th>Ciclo</th>
                 <th>Aula</th>
+                <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
@@ -28,11 +59,13 @@
                     <td>{{ grupo.get_turno_display }}</td>
                     <td>{{ grupo.ciclo.nombre }}</td>
                     <td>{{ grupo.aula_base|default:"Sin aula" }}</td>
+                    <td><span class="mini-button">Ver</span></td>
                 </tr>
             {% empty %}
-                <tr><td colspan="4">Todavia no hay grupos registrados.</td></tr>
+                <tr><td colspan="5">Todavia no hay grupos registrados.</td></tr>
             {% endfor %}
         </tbody>
     </table>
+</section>
 </section>
 {% endblock %}

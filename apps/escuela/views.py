@@ -1,5 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db.models import Q
 from django.shortcuts import redirect, render
 
 from .forms import AlumnoForm, DocenteForm, GrupoForm, InstitucionForm, MateriaForm
@@ -22,7 +23,28 @@ def dashboard(request):
 
 @login_required
 def alumnos(request):
-    return render(request, "escuela/alumnos/index.html", {"alumnos": Alumno.objects.all()[:50]})
+    alumnos_qs = Alumno.objects.select_related("institucion", "tutor")
+    busqueda = request.GET.get("q", "").strip()
+    estado = request.GET.get("estado", "")
+
+    if busqueda:
+        alumnos_qs = alumnos_qs.filter(
+            Q(matricula__icontains=busqueda)
+            | Q(nombres__icontains=busqueda)
+            | Q(apellidos__icontains=busqueda)
+            | Q(tutor__nombre__icontains=busqueda)
+        )
+    if estado == "activo":
+        alumnos_qs = alumnos_qs.filter(activo=True)
+    elif estado == "inactivo":
+        alumnos_qs = alumnos_qs.filter(activo=False)
+
+    alumnos_qs = alumnos_qs[:80]
+    return render(
+        request,
+        "escuela/alumnos/index.html",
+        {"alumnos": alumnos_qs, "busqueda": busqueda, "estado": estado},
+    )
 
 
 @login_required
@@ -37,7 +59,28 @@ def alumno_crear(request):
 
 @login_required
 def docentes(request):
-    return render(request, "escuela/docentes/index.html", {"docentes": Docente.objects.all()[:50]})
+    docentes_qs = Docente.objects.prefetch_related("contratos")
+    busqueda = request.GET.get("q", "").strip()
+    estado = request.GET.get("estado", "")
+
+    if busqueda:
+        docentes_qs = docentes_qs.filter(
+            Q(numero_empleado__icontains=busqueda)
+            | Q(nombres__icontains=busqueda)
+            | Q(apellidos__icontains=busqueda)
+            | Q(correo__icontains=busqueda)
+        )
+    if estado == "activo":
+        docentes_qs = docentes_qs.filter(activo=True)
+    elif estado == "inactivo":
+        docentes_qs = docentes_qs.filter(activo=False)
+
+    docentes_qs = docentes_qs[:80]
+    return render(
+        request,
+        "escuela/docentes/index.html",
+        {"docentes": docentes_qs, "busqueda": busqueda, "estado": estado},
+    )
 
 
 @login_required
@@ -75,7 +118,21 @@ def docente_crear(request):
 
 @login_required
 def grupos(request):
-    return render(request, "escuela/grupos/index.html", {"grupos": Grupo.objects.all()[:50]})
+    grupos_qs = Grupo.objects.select_related("ciclo", "ciclo__institucion")
+    grado = request.GET.get("grado", "")
+    turno = request.GET.get("turno", "")
+
+    if grado:
+        grupos_qs = grupos_qs.filter(grado=grado)
+    if turno:
+        grupos_qs = grupos_qs.filter(turno=turno)
+
+    grupos_qs = grupos_qs[:80]
+    return render(
+        request,
+        "escuela/grupos/index.html",
+        {"grupos": grupos_qs, "grado": grado, "turno": turno},
+    )
 
 
 @login_required
@@ -90,7 +147,21 @@ def grupo_crear(request):
 
 @login_required
 def materias(request):
-    return render(request, "escuela/materias/index.html", {"materias": Materia.objects.all()[:50]})
+    materias_qs = Materia.objects.all()
+    busqueda = request.GET.get("q", "").strip()
+    grado = request.GET.get("grado", "")
+
+    if busqueda:
+        materias_qs = materias_qs.filter(Q(clave__icontains=busqueda) | Q(nombre__icontains=busqueda))
+    if grado:
+        materias_qs = materias_qs.filter(grado=grado)
+
+    materias_qs = materias_qs[:80]
+    return render(
+        request,
+        "escuela/materias/index.html",
+        {"materias": materias_qs, "busqueda": busqueda, "grado": grado},
+    )
 
 
 @login_required

@@ -3,19 +3,18 @@
 {% block title %}{{ titulo }} | Sistema Secundaria{% endblock %}
 
 {% block content %}
-<header class="page-header">
-    <div>
-        <h1>{{ titulo }}</h1>
-        {% if ayuda %}
-            <p>{{ ayuda }}</p>
-        {% else %}
-            <p>Completa los datos y guarda el registro.</p>
-        {% endif %}
-    </div>
-    <a class="button button-secondary" href="{% url volver_url %}">Volver</a>
-</header>
+<section class="page-card form-page-card">
+    <header class="page-header">
+        <div>
+            <h1>{{ titulo }}</h1>
+            {% if ayuda %}
+                <p>{{ ayuda }}</p>
+            {% else %}
+                <p>Completa los datos y guarda el registro.</p>
+            {% endif %}
+        </div>
+    </header>
 
-<section class="content-panel form-panel">
     <form method="post" novalidate>
         {% csrf_token %}
 
@@ -23,20 +22,23 @@
             <div class="alert error">{{ form.non_field_errors }}</div>
         {% endif %}
 
-        <div class="form-grid">
-            {% for field in form %}
-                <div class="form-group">
-                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.help_text %}
-                        <small class="muted">{{ field.help_text }}</small>
-                    {% endif %}
-                    {% for error in field.errors %}
-                        <small class="field-error">{{ error }}</small>
-                    {% endfor %}
-                </div>
-            {% endfor %}
-        </div>
+        <fieldset class="form-fieldset">
+            <legend>Datos del registro</legend>
+            <div class="form-grid">
+                {% for field in form %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.help_text %}
+                            <small class="muted">{{ field.help_text }}</small>
+                        {% endif %}
+                        {% for error in field.errors %}
+                            <small class="field-error">{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+        </fieldset>
 
         <div class="form-actions">
             <button class="button" type="submit">Guardar</button>

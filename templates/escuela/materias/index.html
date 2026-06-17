@@ -3,21 +3,48 @@
 {% block title %}Materias | Sistema Secundaria{% endblock %}
 
 {% block content %}
+<section class="page-card">
 <header class="page-header">
     <div>
         <h1>Materias</h1>
         <p>Catalogo de asignaturas por grado.</p>
     </div>
-    <a class="button" href="{% url 'escuela:materia_crear' %}">Agregar materia</a>
+    <a class="fab-button" href="{% url 'escuela:materia_crear' %}" title="Agregar materia">+</a>
 </header>
 
-<section class="content-panel">
+<form class="filter-panel" method="get">
+    <strong>Filtros</strong>
+    <div class="filter-grid">
+        <div class="form-group">
+            <label for="q">Materia</label>
+            <input id="q" name="q" value="{{ busqueda }}" placeholder="Buscar por nombre...">
+        </div>
+        <div class="form-group">
+            <label for="grado">Grado</label>
+            <select id="grado" name="grado">
+                <option value="">-- Todos --</option>
+                <option value="1" {% if grado == "1" %}selected{% endif %}>1ro</option>
+                <option value="2" {% if grado == "2" %}selected{% endif %}>2do</option>
+                <option value="3" {% if grado == "3" %}selected{% endif %}>3ro</option>
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button class="button" type="submit">Filtrar</button>
+            <a class="button button-secondary" href="{% url 'escuela:materias' %}">Limpiar</a>
+        </div>
+    </div>
+</form>
+
+<p class="result-count">Mostrando {{ materias|length }} materia(s)</p>
+
+<section class="table-panel">
     <table class="table">
         <thead>
             <tr>
                 <th>Clave</th>
                 <th>Materia</th>
                 <th>Grado</th>
+                <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
@@ -26,11 +53,13 @@
                     <td>{{ materia.clave }}</td>
                     <td>{{ materia.nombre }}</td>
                     <td>{{ materia.grado }}</td>
+                    <td><span class="mini-button">Ver</span></td>
                 </tr>
             {% empty %}
-                <tr><td colspan="3">Todavia no hay materias registradas.</td></tr>
+                <tr><td colspan="4">Todavia no hay materias registradas.</td></tr>
             {% endfor %}
         </tbody>
     </table>
+</section>
 </section>
 {% endblock %}
