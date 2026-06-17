@@ -53,6 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (boardFilters && groupBoards.length) {
         const filterButtons = boardFilters.querySelectorAll("[data-filter-type]");
+        const filterToggle = boardFilters.querySelector("[data-filter-toggle]");
 
         const setActiveFilter = (activeButton) => {
             filterButtons.forEach((button) => button.classList.remove("active"));
@@ -87,5 +88,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
         });
+
+        if (filterToggle) {
+            filterToggle.addEventListener("click", () => {
+                const isCollapsed = boardFilters.classList.toggle("is-collapsed");
+                filterToggle.setAttribute("aria-expanded", String(!isCollapsed));
+                filterToggle.setAttribute("title", isCollapsed ? "Mostrar filtros" : "Ocultar filtros");
+                filterToggle.textContent = isCollapsed ? "v" : "^";
+            });
+        }
     }
 });
