@@ -6,6 +6,7 @@ app_name = "escuela"
 
 urlpatterns = [
     path("", views.dashboard, name="dashboard"),
+    path("seleccionar-institucion/", views.seleccionar_institucion, name="seleccionar_institucion"),
     path("alumnos/", views.alumnos, name="alumnos"),
     path("alumnos/agregar/", views.alumno_crear, name="alumno_crear"),
     path("docentes/", views.docentes, name="docentes"),

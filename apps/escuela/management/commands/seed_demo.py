@@ -45,7 +45,7 @@ class Command(BaseCommand):
             nombre="2025-2026",
             defaults={"activo": True},
         )
-        CicloEscolar.objects.exclude(id=ciclo.id).update(activo=False)
+        CicloEscolar.objects.filter(institucion=institucion).exclude(id=ciclo.id).update(activo=False)
 
         for numero in range(1, 4):
             Periodo.objects.get_or_create(
@@ -76,7 +76,11 @@ class Command(BaseCommand):
             ("QUI3", "Quimica", 3),
         ]
         for clave, nombre, grado in materias:
-            Materia.objects.get_or_create(clave=clave, defaults={"nombre": nombre, "grado": grado})
+            Materia.objects.get_or_create(
+                institucion=institucion,
+                clave=clave,
+                defaults={"nombre": nombre, "grado": grado},
+            )
 
         bloques = [
             (1, time(7, 0), time(7, 50), False),

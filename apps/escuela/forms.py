@@ -10,7 +10,7 @@ class AlumnoForm(forms.ModelForm):
 
     class Meta:
         model = Alumno
-        fields = ["institucion", "matricula", "nombres", "apellidos", "fecha_nacimiento", "activo"]
+        fields = ["matricula", "nombres", "apellidos", "fecha_nacimiento", "activo"]
         widgets = {
             "fecha_nacimiento": forms.DateInput(attrs={"type": "date"}),
         }
@@ -52,11 +52,27 @@ class GrupoForm(forms.ModelForm):
         model = Grupo
         fields = ["ciclo", "grado", "letra", "turno", "aula_base", "tutor"]
 
+    def __init__(self, *args, institucion=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if institucion:
+            self.fields["ciclo"].queryset = self.fields["ciclo"].queryset.filter(institucion=institucion)
+            self.fields["tutor"].queryset = self.fields["tutor"].queryset.filter(institucion=institucion)
+
 
 class MateriaForm(forms.ModelForm):
     class Meta:
         model = Materia
         fields = ["clave", "nombre", "grado"]
+
+    def __init__(self, *args, institucion=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.institucion = institucion
+
+    def clean_clave(self):
+        clave = self.cleaned_data["clave"]
+        if self.institucion and Materia.objects.filter(institucion=self.institucion, clave=clave).exists():
+            raise forms.ValidationError("Ya existe una materia con esta clave en la escuela seleccionada.")
+        return clave
 
 
 class InstitucionForm(forms.ModelForm):
@@ -89,4 +105,5 @@ class AsignacionMateriaForm(forms.ModelForm):
         self.fields["horas_semanales"].min_value = 1
         self.fields["horas_semanales"].max_value = 40
         if ciclo:
+            self.fields["materia"].queryset = self.fields["materia"].queryset.filter(institucion=ciclo.institucion)
             self.fields["grupos"].queryset = Grupo.objects.filter(ciclo=ciclo).order_by("grado", "letra")

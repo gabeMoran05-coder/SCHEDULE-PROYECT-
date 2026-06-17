@@ -24,6 +24,20 @@
                     <a href="{% url 'horarios:index' %}">Horarios</a>
                     <a href="{% url 'horarios:tablero' %}">Tablero</a>
                     <a href="{% url 'usuarios:perfil' %}">Perfil</a>
+                    <form class="school-switcher" action="{% url 'escuela:seleccionar_institucion' %}" method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                        <select id="school-select" name="institucion_id" onchange="this.form.submit()" aria-label="Institucion actual">
+                            {% for institucion in nav_instituciones %}
+                                <option value="{{ institucion.id }}" {% if nav_selected_institution and institucion.id == nav_selected_institution.id %}selected{% endif %}>
+                                    {{ institucion.nombre }}
+                                </option>
+                            {% empty %}
+                                <option value="">Sin instituciones</option>
+                            {% endfor %}
+                        </select>
+                        <a href="{% url 'escuela:institucion_crear' %}" title="Agregar institucion">+</a>
+                    </form>
                     <form action="{% url 'usuarios:logout' %}" method="post">
                         {% csrf_token %}
                         <button type="submit">Cerrar sesion</button>

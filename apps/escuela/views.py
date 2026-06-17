@@ -1,31 +1,85 @@
+from datetime import date, time
+
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from django.shortcuts import get_object_or_404, redirect, render
 
 from apps.horarios.models import FichaAsignacion
 
 from .forms import AlumnoForm, AsignacionMateriaForm, DocenteForm, GrupoForm, InstitucionForm, MateriaForm
 from .models import Alumno, AsignacionDocenteMateria, CicloEscolar, ContratoDocente, Docente, Grupo, Institucion, Materia
+from .selectors import get_selected_cycle, get_selected_institution
+
+
+def _default_cycle_name():
+    today = date.today()
+    start_year = today.year if today.month >= 8 else today.year - 1
+    return f"{start_year}-{start_year + 1}"
+
+
+def _ensure_school_base(institucion):
+    ciclo, _ = CicloEscolar.objects.get_or_create(
+        institucion=institucion,
+        nombre=_default_cycle_name(),
+        defaults={"activo": True},
+    )
+    CicloEscolar.objects.filter(institucion=institucion).exclude(id=ciclo.id).update(activo=False)
+
+    for numero in range(1, 4):
+        ciclo.periodos.get_or_create(numero=numero, defaults={"nombre": f"Periodo {numero}"})
+
+    from apps.horarios.models import BloqueHorario
+
+    bloques = [
+        (1, time(7, 0), time(7, 50), False),
+        (2, time(7, 50), time(8, 40), False),
+        (3, time(8, 40), time(9, 30), False),
+        (4, time(9, 30), time(9, 50), True),
+        (5, time(9, 50), time(10, 40), False),
+        (6, time(10, 40), time(11, 30), False),
+        (7, time(11, 30), time(12, 20), False),
+        (8, time(12, 20), time(13, 10), False),
+    ]
+    for orden, inicio, fin, es_receso in bloques:
+        BloqueHorario.objects.get_or_create(
+            ciclo=ciclo,
+            orden=orden,
+            defaults={"hora_inicio": inicio, "hora_fin": fin, "es_receso": es_receso},
+        )
+    return ciclo
 
 
 @login_required
 def dashboard(request):
+    institucion = get_selected_institution(request)
+    ciclo_activo = get_selected_cycle(request)
     context = {
         "total_instituciones": Institucion.objects.count(),
-        "ciclo_activo": CicloEscolar.objects.filter(activo=True).select_related("institucion").first(),
-        "total_alumnos": Alumno.objects.filter(activo=True).count(),
-        "total_docentes": Docente.objects.filter(activo=True).count(),
-        "total_contratos": ContratoDocente.objects.filter(activo=True).count(),
-        "total_grupos": Grupo.objects.count(),
-        "total_materias": Materia.objects.count(),
+        "institucion_actual": institucion,
+        "ciclo_activo": ciclo_activo,
+        "total_alumnos": Alumno.objects.filter(institucion=institucion, activo=True).count() if institucion else 0,
+        "total_docentes": ContratoDocente.objects.filter(institucion=institucion, activo=True).count() if institucion else 0,
+        "total_contratos": ContratoDocente.objects.filter(institucion=institucion, activo=True).count() if institucion else 0,
+        "total_grupos": Grupo.objects.filter(ciclo__institucion=institucion).count() if institucion else 0,
+        "total_materias": Materia.objects.filter(institucion=institucion).count() if institucion else 0,
     }
     return render(request, "escuela/dashboard.html", context)
 
 
 @login_required
+def seleccionar_institucion(request):
+    institucion_id = request.POST.get("institucion_id")
+    if institucion_id and Institucion.objects.filter(id=institucion_id).exists():
+        request.session["selected_institution_id"] = int(institucion_id)
+        messages.success(request, "Escuela seleccionada correctamente.")
+    return redirect(request.POST.get("next") or "escuela:dashboard")
+
+
+@login_required
 def alumnos(request):
-    alumnos_qs = Alumno.objects.select_related("institucion", "tutor")
+    institucion = get_selected_institution(request)
+    alumnos_qs = Alumno.objects.select_related("institucion", "tutor").filter(institucion=institucion)
     busqueda = request.GET.get("q", "").strip()
     estado = request.GET.get("estado", "")
 
@@ -51,9 +105,12 @@ def alumnos(request):
 
 @login_required
 def alumno_crear(request):
+    institucion = get_selected_institution(request)
     form = AlumnoForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
-        form.save()
+        alumno = form.save(commit=False)
+        alumno.institucion = institucion
+        alumno.save()
         messages.success(request, "Alumno registrado correctamente.")
         return redirect("escuela:alumnos")
     return render(request, "escuela/formulario.html", {"form": form, "titulo": "Agregar alumno", "volver_url": "escuela:alumnos"})
@@ -61,7 +118,17 @@ def alumno_crear(request):
 
 @login_required
 def docentes(request):
-    docentes_qs = Docente.objects.prefetch_related("contratos", "contratos__asignaciones")
+    institucion = get_selected_institution(request)
+    docentes_qs = (
+        Docente.objects.filter(contratos__institucion=institucion)
+        .prefetch_related(
+            Prefetch(
+                "contratos",
+                queryset=ContratoDocente.objects.filter(institucion=institucion).prefetch_related("asignaciones"),
+            )
+        )
+        .distinct()
+    )
     busqueda = request.GET.get("q", "").strip()
     estado = request.GET.get("estado", "")
 
@@ -85,8 +152,8 @@ def docentes(request):
     )
 
 
-def _contrato_activo_para_docente(docente):
-    ciclo_activo = CicloEscolar.objects.filter(activo=True).select_related("institucion").first()
+def _contrato_activo_para_docente(request, docente):
+    ciclo_activo = get_selected_cycle(request)
     if not ciclo_activo:
         return None
     contrato, _ = ContratoDocente.objects.get_or_create(
@@ -101,7 +168,11 @@ def _contrato_activo_para_docente(docente):
 @login_required
 def docente_detalle(request, docente_id):
     docente = get_object_or_404(Docente, id=docente_id)
-    contrato = _contrato_activo_para_docente(docente)
+    institucion = get_selected_institution(request)
+    if not docente.contratos.filter(institucion=institucion).exists():
+        messages.error(request, "Ese docente no pertenece a la escuela seleccionada.")
+        return redirect("escuela:docentes")
+    contrato = _contrato_activo_para_docente(request, docente)
 
     if not contrato:
         messages.error(request, "Primero crea un ciclo escolar activo para asignar materias.")
@@ -166,7 +237,7 @@ def docente_detalle(request, docente_id):
 @login_required
 def docente_crear(request):
     form = DocenteForm(request.POST or None)
-    ciclo_activo = CicloEscolar.objects.filter(activo=True).select_related("institucion").first()
+    ciclo_activo = get_selected_cycle(request)
 
     if request.method == "POST" and form.is_valid():
         docente = form.save()
@@ -198,7 +269,8 @@ def docente_crear(request):
 
 @login_required
 def grupos(request):
-    grupos_qs = Grupo.objects.select_related("ciclo", "ciclo__institucion")
+    institucion = get_selected_institution(request)
+    grupos_qs = Grupo.objects.select_related("ciclo", "ciclo__institucion").filter(ciclo__institucion=institucion)
     grado = request.GET.get("grado", "")
     turno = request.GET.get("turno", "")
 
@@ -217,7 +289,8 @@ def grupos(request):
 
 @login_required
 def grupo_crear(request):
-    form = GrupoForm(request.POST or None)
+    institucion = get_selected_institution(request)
+    form = GrupoForm(request.POST or None, institucion=institucion)
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Grupo registrado correctamente.")
@@ -227,7 +300,8 @@ def grupo_crear(request):
 
 @login_required
 def materias(request):
-    materias_qs = Materia.objects.all()
+    institucion = get_selected_institution(request)
+    materias_qs = Materia.objects.filter(institucion=institucion)
     busqueda = request.GET.get("q", "").strip()
     grado = request.GET.get("grado", "")
 
@@ -246,9 +320,12 @@ def materias(request):
 
 @login_required
 def materia_crear(request):
-    form = MateriaForm(request.POST or None)
+    institucion = get_selected_institution(request)
+    form = MateriaForm(request.POST or None, institucion=institucion)
     if request.method == "POST" and form.is_valid():
-        form.save()
+        materia = form.save(commit=False)
+        materia.institucion = institucion
+        materia.save()
         messages.success(request, "Materia registrada correctamente.")
         return redirect("escuela:materias")
     return render(request, "escuela/formulario.html", {"form": form, "titulo": "Agregar materia", "volver_url": "escuela:materias"})
@@ -258,7 +335,9 @@ def materia_crear(request):
 def institucion_crear(request):
     form = InstitucionForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
-        form.save()
+        institucion = form.save()
+        _ensure_school_base(institucion)
+        request.session["selected_institution_id"] = institucion.id
         messages.success(request, "Institucion registrada correctamente.")
         return redirect("escuela:dashboard")
     return render(

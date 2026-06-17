@@ -107,12 +107,14 @@ class ContratoDocente(models.Model):
 
 
 class Materia(models.Model):
-    clave = models.CharField(max_length=20, unique=True)
+    institucion = models.ForeignKey(Institucion, on_delete=models.PROTECT, related_name="materias", null=True, blank=True)
+    clave = models.CharField(max_length=20)
     nombre = models.CharField(max_length=100)
     grado = models.PositiveSmallIntegerField()
 
     class Meta:
         ordering = ["grado", "nombre"]
+        unique_together = ["institucion", "clave"]
 
     def __str__(self):
         return f"{self.nombre} ({self.grado})"
