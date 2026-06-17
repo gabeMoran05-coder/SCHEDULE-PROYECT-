@@ -1,0 +1,42 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Sistema Secundaria{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    {% if user.is_authenticated %}
+        <div class="layout">
+            <aside class="sidebar">
+                <div class="brand">
+                    <strong>Secundaria</strong>
+                    <span>Sistema escolar</span>
+                </div>
+                <nav class="nav">
+                    <a href="{% url 'escuela:dashboard' %}">Dashboard</a>
+                    <a href="{% url 'escuela:alumnos' %}">Alumnos</a>
+                    <a href="{% url 'escuela:docentes' %}">Docentes</a>
+                    <a href="{% url 'escuela:grupos' %}">Grupos</a>
+                    <a href="{% url 'escuela:materias' %}">Materias</a>
+                    <a href="{% url 'horarios:index' %}">Horarios</a>
+                    <a href="{% url 'horarios:tablero' %}">Tablero</a>
+                    <a href="{% url 'usuarios:perfil' %}">Perfil</a>
+                    <form action="{% url 'usuarios:logout' %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit">Cerrar sesion</button>
+                    </form>
+                </nav>
+            </aside>
+            <main class="main">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    {% else %}
+        {% block auth_content %}{% endblock %}
+    {% endif %}
+    <script src="{% static 'js/app.js' %}"></script>
+</body>
+</html>

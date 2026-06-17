@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Tablero | Sistema Secundaria{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <h1>Tablero de horarios</h1>
+        {% if ciclo %}
+            <p>{{ ciclo.institucion.nombre }} - {{ ciclo.nombre }}</p>
+        {% else %}
+            <p>Todavia no hay ciclo activo.</p>
+        {% endif %}
+    </div>
+    <button class="button" type="button" onclick="window.print()">Imprimir</button>
+</header>
+
+<section class="scheduler-shell">
+    <aside class="assignment-tray">
+        <h2>Fichas por colocar</h2>
+        {% for ficha in fichas %}
+            <article class="assignment-card" draggable="true" style="--card-color: {{ ficha.color }};">
+                <strong>{{ ficha.asignacion.contrato.docente }}</strong>
+                <span>{{ ficha.asignacion.materia.nombre }} - {{ ficha.grupo }}</span>
+                <small>{{ ficha.horas_por_colocar }} h - Aula {{ ficha.aula|default:"pendiente" }}</small>
+            </article>
+        {% empty %}
+            <p class="muted">Crea asignaciones docente-materia para generar fichas.</p>
+        {% endfor %}
+    </aside>
+
+    <section class="schedule-board">
+        <div class="board-toolbar">
+            <a class="filter-pill" href="#">General</a>
+            <a class="filter-pill" href="#">1ro</a>
+            <a class="filter-pill" href="#">2do</a>
+            <a class="filter-pill" href="#">3ro</a>
+            {% for grupo in grupos %}
+                <a class="filter-pill" href="#grupo-{{ grupo.id }}">{{ grupo.grado }}{{ grupo.letra }}</a>
+            {% endfor %}
+        </div>
+
+        {% for grupo in grupos %}
+            <article class="group-board" id="grupo-{{ grupo.id }}">
+                <h2>{{ grupo.grado }}{{ grupo.letra }}</h2>
+                <div class="schedule-grid">
+                    <div class="schedule-cell schedule-head">Hora</div>
+                    {% for dia_value, dia_label in dias %}
+                        <div class="schedule-cell schedule-head">{{ dia_label }}</div>
+                    {% endfor %}
+
+                    {% for bloque in bloques %}
+                        <div class="schedule-cell time-cell">{{ bloque.hora_inicio|time:"H:i" }}</div>
+                        {% for dia_value, dia_label in dias %}
+                            <div class="schedule-cell drop-cell" data-dia="{{ dia_value }}" data-bloque="{{ bloque.id }}" data-grupo="{{ grupo.id }}">
+                                {% if bloque.es_receso %}
+                                    <strong>RECESO</strong>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% empty %}
+                        <div class="schedule-cell empty-board">Define los bloques de hora desde el administrador.</div>
+                    {% endfor %}
+                </div>
+            </article>
+        {% empty %}
+            <section class="content-panel">
+                <p class="muted">Crea grupos para el ciclo activo y apareceran aqui como 1A, 1B, 2A, 3A, etc.</p>
+            </section>
+        {% endfor %}
+    </section>
+</section>
+{% endblock %}

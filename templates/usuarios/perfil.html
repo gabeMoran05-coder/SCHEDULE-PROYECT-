@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Perfil | Sistema Secundaria{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <h1>Perfil</h1>
+        <p>Informacion basica de la sesion actual.</p>
+    </div>
+</header>
+
+<section class="content-panel">
+    <p><strong>Usuario:</strong> {{ user.username }}</p>
+    <p><strong>Correo:</strong> {{ user.email|default:"Sin correo registrado" }}</p>
+    <p><strong>Administrador:</strong> {% if user.is_staff %}Si{% else %}No{% endif %}</p>
+</section>
+{% endblock %}

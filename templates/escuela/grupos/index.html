@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Grupos | Sistema Secundaria{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <h1>Grupos</h1>
+        <p>Grados, letras, turnos y ciclo escolar.</p>
+    </div>
+</header>
+
+<section class="content-panel">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Grupo</th>
+                <th>Turno</th>
+                <th>Ciclo</th>
+                <th>Aula</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for grupo in grupos %}
+                <tr>
+                    <td>{{ grupo.grado }}{{ grupo.letra }}</td>
+                    <td>{{ grupo.get_turno_display }}</td>
+                    <td>{{ grupo.ciclo.nombre }}</td>
+                    <td>{{ grupo.aula_base|default:"Sin aula" }}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="4">Todavia no hay grupos registrados.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endblock %}

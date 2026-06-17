@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Alumnos | Sistema Secundaria{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <h1>Alumnos</h1>
+        <p>Registro principal de estudiantes.</p>
+    </div>
+</header>
+
+<section class="content-panel">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Matricula</th>
+                <th>Nombre</th>
+                <th>Tutor</th>
+                <th>Activo</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for alumno in alumnos %}
+                <tr>
+                    <td>{{ alumno.matricula }}</td>
+                    <td>{{ alumno.apellidos }} {{ alumno.nombres }}</td>
+                    <td>{{ alumno.tutor|default:"Sin tutor" }}</td>
+                    <td>{% if alumno.activo %}Si{% else %}No{% endif %}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="4">Todavia no hay alumnos registrados.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endblock %}

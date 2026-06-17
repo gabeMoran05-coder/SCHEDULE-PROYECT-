@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Docentes | Sistema Secundaria{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <h1>Docentes</h1>
+        <p>Personal docente registrado.</p>
+    </div>
+</header>
+
+<section class="content-panel">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>No. empleado</th>
+                <th>Nombre</th>
+                <th>Correo</th>
+                <th>Telefono</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for docente in docentes %}
+                <tr>
+                    <td>{{ docente.numero_empleado }}</td>
+                    <td>{{ docente.apellidos }} {{ docente.nombres }}</td>
+                    <td>{{ docente.correo|default:"Sin correo" }}</td>
+                    <td>{{ docente.telefono|default:"Sin telefono" }}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="4">Todavia no hay docentes registrados.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endblock %}

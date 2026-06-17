@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Sistema Secundaria{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <h1>Dashboard</h1>
+        <p>Resumen inicial de la base de datos escolar.</p>
+    </div>
+</header>
+
+<section class="grid cols-3">
+    <article class="stat-card">
+        <span>Instituciones</span>
+        <strong>{{ total_instituciones }}</strong>
+    </article>
+    <article class="stat-card">
+        <span>Alumnos activos</span>
+        <strong>{{ total_alumnos }}</strong>
+    </article>
+    <article class="stat-card">
+        <span>Docentes activos</span>
+        <strong>{{ total_docentes }}</strong>
+    </article>
+    <article class="stat-card">
+        <span>Grupos</span>
+        <strong>{{ total_grupos }}</strong>
+    </article>
+</section>
+
+<section class="content-panel" style="margin-top: 16px;">
+    <h2>Ciclo activo</h2>
+    {% if ciclo_activo %}
+        <p>{{ ciclo_activo.nombre }} en {{ ciclo_activo.institucion.nombre }}</p>
+    {% else %}
+        <p class="muted">Todavia no hay un ciclo activo. Puedes crearlo desde el administrador.</p>
+    {% endif %}
+</section>
+
+<section class="content-panel" style="margin-top: 16px;">
+    <h2>Modelo preparado</h2>
+    <p class="muted">El sistema separa instituciones, ciclos escolares, tres periodos, profesores por contrato, materias sin duplicar y grupos variables por grado.</p>
+</section>
+{% endblock %}
