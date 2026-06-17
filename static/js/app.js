@@ -27,6 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 label.textContent = String(remaining);
             }
         });
+        document.dispatchEvent(new CustomEvent("schedule:fichas-updated"));
     };
 
     const bindCardDrag = (card) => {
@@ -115,6 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const boardFilters = document.querySelector("[data-board-filters]");
     const groupBoards = document.querySelectorAll("[data-group-board]");
+    const teacherTrays = document.querySelectorAll(".teacher-tray");
 
     if (boardFilters && groupBoards.length) {
         const filterButtons = boardFilters.querySelectorAll("[data-filter-type]");
@@ -133,26 +135,73 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         };
 
+        const showTrayCards = ({ grade, groupId }) => {
+            teacherTrays.forEach((tray) => {
+                const cards = tray.querySelectorAll(".assignment-card[data-max-hours]");
+                let visibleCount = 0;
+                let visibleHours = 0;
+
+                cards.forEach((card) => {
+                    const matchesGrade = !grade || card.dataset.grade === grade;
+                    const matchesGroup = !groupId || `grupo-${card.dataset.groupId}` === groupId;
+                    const isVisible = matchesGrade && matchesGroup;
+                    card.hidden = !isVisible;
+
+                    if (isVisible) {
+                        visibleCount += 1;
+                        visibleHours += Number(card.dataset.remainingHours || 0);
+                    }
+                });
+
+                tray.hidden = visibleCount === 0;
+                tray.open = visibleCount > 0 && Boolean(grade || groupId);
+
+                const pendingLabel = tray.querySelector("[data-teacher-pending]");
+                if (pendingLabel) {
+                    pendingLabel.textContent = `${visibleHours} h pendientes`;
+                }
+            });
+        };
+
+        const applyFilter = ({ grade, groupId }) => {
+            showBoards({ grade, groupId });
+            showTrayCards({ grade, groupId });
+        };
+
+        const getActiveFilter = () => {
+            const activeButton = boardFilters.querySelector("[data-filter-type].active");
+            if (!activeButton || activeButton.dataset.filterType === "general") {
+                return {};
+            }
+            if (activeButton.dataset.filterType === "grade") {
+                return { grade: activeButton.dataset.grade };
+            }
+            return { groupId: activeButton.dataset.group };
+        };
+
         filterButtons.forEach((button) => {
             button.addEventListener("click", () => {
                 const type = button.dataset.filterType;
                 setActiveFilter(button);
 
                 if (type === "general") {
-                    showBoards({});
+                    applyFilter({});
                     return;
                 }
 
                 if (type === "grade") {
-                    showBoards({ grade: button.dataset.grade });
+                    applyFilter({ grade: button.dataset.grade });
                     return;
                 }
 
                 if (type === "group") {
-                    showBoards({ groupId: button.dataset.group });
+                    applyFilter({ groupId: button.dataset.group });
                 }
             });
         });
+
+        applyFilter({});
+        document.addEventListener("schedule:fichas-updated", () => applyFilter(getActiveFilter()));
 
         if (filterToggle) {
             filterToggle.addEventListener("click", () => {

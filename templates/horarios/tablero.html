@@ -22,7 +22,7 @@
             <details class="teacher-tray" {% if forloop.first %}open{% endif %}>
                 <summary>
                     <strong>{{ docente.docente }}</strong>
-                    <span>{{ docente.horas_restantes }} h pendientes</span>
+                    <span data-teacher-pending>{{ docente.horas_restantes }} h pendientes</span>
                 </summary>
                 <div class="teacher-ficha-list">
                     {% for ficha in docente.fichas %}
