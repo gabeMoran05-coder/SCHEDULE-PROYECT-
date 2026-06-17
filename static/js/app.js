@@ -47,4 +47,45 @@ document.addEventListener("DOMContentLoaded", () => {
             cell.appendChild(clone);
         });
     });
+
+    const boardFilters = document.querySelector("[data-board-filters]");
+    const groupBoards = document.querySelectorAll("[data-group-board]");
+
+    if (boardFilters && groupBoards.length) {
+        const filterButtons = boardFilters.querySelectorAll("[data-filter-type]");
+
+        const setActiveFilter = (activeButton) => {
+            filterButtons.forEach((button) => button.classList.remove("active"));
+            activeButton.classList.add("active");
+        };
+
+        const showBoards = ({ grade, groupId }) => {
+            groupBoards.forEach((board) => {
+                const matchesGrade = !grade || board.dataset.grade === grade;
+                const matchesGroup = !groupId || board.id === groupId;
+                board.hidden = !(matchesGrade && matchesGroup);
+            });
+        };
+
+        filterButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+                const type = button.dataset.filterType;
+                setActiveFilter(button);
+
+                if (type === "general") {
+                    showBoards({});
+                    return;
+                }
+
+                if (type === "grade") {
+                    showBoards({ grade: button.dataset.grade });
+                    return;
+                }
+
+                if (type === "group") {
+                    showBoards({ groupId: button.dataset.group });
+                }
+            });
+        });
+    }
 });

@@ -588,25 +588,103 @@ input[type="checkbox"] {
 .board-toolbar {
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: 8px;
+    border-radius: 12px;
+    display: grid;
+    gap: 16px;
+    padding: 14px;
+}
+
+.board-filter-panel {
+    background: var(--panel-soft);
+}
+
+.board-filter-main {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    padding: 10px;
+}
+
+.grade-filter-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.grade-filter {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.grade-filter summary {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    list-style: none;
+    padding: 14px 16px;
+}
+
+.grade-filter summary::-webkit-details-marker {
+    display: none;
+}
+
+.grade-filter summary span {
+    color: var(--brand-dark);
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.grade-filter summary small {
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.grade-chip-row {
+    border-top: 1px solid var(--line);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 14px 14px;
 }
 
 .filter-pill {
+    background: white;
     border: 1px solid var(--line);
-    border-radius: 6px;
+    border-radius: 8px;
     color: var(--ink);
+    cursor: pointer;
+    font: inherit;
     min-width: 48px;
-    padding: 8px 10px;
+    padding: 10px 14px;
     text-align: center;
 }
 
-.filter-pill:hover {
+.filter-pill:hover,
+.filter-pill.active {
+    background: var(--brand);
     border-color: var(--brand);
-    color: var(--brand);
+    color: white;
+}
+
+.group-filter-chip {
+    background: #f8fcff;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--brand-dark);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 800;
+    min-height: 36px;
+    padding: 7px 13px;
+}
+
+.group-filter-chip:hover,
+.group-filter-chip.active {
+    background: #dcf2ff;
+    border-color: #8fc9ec;
 }
 
 .group-board {
@@ -698,6 +776,10 @@ input[type="checkbox"] {
     }
 
     .filter-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .grade-filter-grid {
         grid-template-columns: 1fr;
     }
 

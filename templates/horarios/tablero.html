@@ -30,18 +30,64 @@
     </aside>
 
     <section class="schedule-board">
-        <div class="board-toolbar">
-            <a class="filter-pill" href="#">General</a>
-            <a class="filter-pill" href="#">1ro</a>
-            <a class="filter-pill" href="#">2do</a>
-            <a class="filter-pill" href="#">3ro</a>
-            {% for grupo in grupos %}
-                <a class="filter-pill" href="#grupo-{{ grupo.id }}">{{ grupo.grado }}{{ grupo.letra }}</a>
-            {% endfor %}
+        <div class="board-toolbar board-filter-panel" data-board-filters>
+            <div class="board-filter-main">
+                <button class="filter-pill active" type="button" data-filter-type="general">General</button>
+                <button class="filter-pill" type="button" data-filter-type="grade" data-grade="1">1ro</button>
+                <button class="filter-pill" type="button" data-filter-type="grade" data-grade="2">2do</button>
+                <button class="filter-pill" type="button" data-filter-type="grade" data-grade="3">3ro</button>
+            </div>
+
+            <div class="grade-filter-grid">
+                <details class="grade-filter" open>
+                    <summary>
+                        <span>1ro</span>
+                        <small>Todos los primeros</small>
+                    </summary>
+                    <div class="grade-chip-row">
+                        <button class="group-filter-chip" type="button" data-filter-type="grade" data-grade="1">Todo 1ro</button>
+                        {% for grupo in grupos %}
+                            {% if grupo.grado == 1 %}
+                                <button class="group-filter-chip" type="button" data-filter-type="group" data-group="grupo-{{ grupo.id }}">{{ grupo.grado }}{{ grupo.letra }}</button>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </details>
+
+                <details class="grade-filter">
+                    <summary>
+                        <span>2do</span>
+                        <small>Todos los segundos</small>
+                    </summary>
+                    <div class="grade-chip-row">
+                        <button class="group-filter-chip" type="button" data-filter-type="grade" data-grade="2">Todo 2do</button>
+                        {% for grupo in grupos %}
+                            {% if grupo.grado == 2 %}
+                                <button class="group-filter-chip" type="button" data-filter-type="group" data-group="grupo-{{ grupo.id }}">{{ grupo.grado }}{{ grupo.letra }}</button>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </details>
+
+                <details class="grade-filter">
+                    <summary>
+                        <span>3ro</span>
+                        <small>Todos los terceros</small>
+                    </summary>
+                    <div class="grade-chip-row">
+                        <button class="group-filter-chip" type="button" data-filter-type="grade" data-grade="3">Todo 3ro</button>
+                        {% for grupo in grupos %}
+                            {% if grupo.grado == 3 %}
+                                <button class="group-filter-chip" type="button" data-filter-type="group" data-group="grupo-{{ grupo.id }}">{{ grupo.grado }}{{ grupo.letra }}</button>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </details>
+            </div>
         </div>
 
         {% for grupo in grupos %}
-            <article class="group-board" id="grupo-{{ grupo.id }}">
+            <article class="group-board" id="grupo-{{ grupo.id }}" data-grade="{{ grupo.grado }}" data-group-board>
                 <h2>{{ grupo.grado }}{{ grupo.letra }}</h2>
                 <div class="schedule-grid">
                     <div class="schedule-cell schedule-head">Hora</div>
