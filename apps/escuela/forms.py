@@ -62,7 +62,7 @@ class GrupoForm(forms.ModelForm):
 class MateriaForm(forms.ModelForm):
     class Meta:
         model = Materia
-        fields = ["clave", "nombre", "grado"]
+        fields = ["clave", "nombre", "grado", "horas_semanales"]
 
     def __init__(self, *args, institucion=None, **kwargs):
         super().__init__(*args, **kwargs)

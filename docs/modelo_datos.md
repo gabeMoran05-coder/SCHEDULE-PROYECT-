@@ -11,7 +11,7 @@ El director cambia de escuela cada varios anos, pero necesita conservar historic
 - `Periodo`: cada ciclo tiene tres periodos.
 - `Docente`: datos unicos del profesor, sin duplicarlo por materia o escuela.
 - `ContratoDocente`: une docente, institucion y ciclo, con sus horas semanales.
-- `Materia`: catalogo por grado y por institucion, sin duplicar por profesor.
+- `Materia`: catalogo por grado y por institucion, sin duplicar por profesor. Guarda las horas semanales base de esa materia; todos los grupos del mismo grado usan esa misma carga.
 - `AsignacionDocenteMateria`: indica que un profesor da una materia a ciertos grupos.
 - `Grupo`: grupos variables por ciclo, por ejemplo 1A, 1B, 2A o 3E.
 - `Alumno`: alumno ligado a institucion.
@@ -24,6 +24,10 @@ El director cambia de escuela cada varios anos, pero necesita conservar historic
 ## Ventaja
 
 Si el director cambia de escuela, se crea otra `Institucion` y otro `CicloEscolar`. El sistema mantiene el historial anterior sin mezclar alumnos, grupos ni horarios.
+
+## Regla grado-grupos
+
+Un grado agrupa varios grupos, por ejemplo 1ro contiene 1A, 1B, 1C, 1D y 1E. Las materias se registran por grado, no por grupo, para que Espanol de 1ro tenga una sola carga horaria y esa misma cantidad aplique a todos los grupos de 1ro.
 
 ## Escuela seleccionada
 

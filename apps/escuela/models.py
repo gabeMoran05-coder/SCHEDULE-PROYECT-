@@ -111,6 +111,7 @@ class Materia(models.Model):
     clave = models.CharField(max_length=20)
     nombre = models.CharField(max_length=100)
     grado = models.PositiveSmallIntegerField()
+    horas_semanales = models.PositiveSmallIntegerField(default=1)
 
     class Meta:
         ordering = ["grado", "nombre"]
