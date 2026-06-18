@@ -2,6 +2,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const rows = document.querySelectorAll("[data-clickable-row]");
     let draggedCard = null;
     let dragOriginCell = null;
+    const boardSnapshots = new Map();
+
+    const getCleanScheduleHtml = (scheduleGrid) => {
+        const clone = scheduleGrid.cloneNode(true);
+        clone.querySelectorAll("[data-drag-bound], [data-drop-bound]").forEach((element) => {
+            delete element.dataset.dragBound;
+            delete element.dataset.dropBound;
+            element.classList.remove("dragging", "drag-over", "drop-rejected");
+        });
+        return clone.innerHTML;
+    };
 
     rows.forEach((row) => {
         row.addEventListener("click", () => {
@@ -31,6 +42,11 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const bindCardDrag = (card) => {
+        if (card.dataset.dragBound === "true") {
+            return;
+        }
+        card.dataset.dragBound = "true";
+
         card.addEventListener("dragstart", (event) => {
             if (card.dataset.maxHours && Number(card.dataset.remainingHours || 0) <= 0) {
                 event.preventDefault();
@@ -69,7 +85,12 @@ document.addEventListener("DOMContentLoaded", () => {
         return card;
     };
 
-    document.querySelectorAll(".drop-cell").forEach((cell) => {
+    const bindDropCell = (cell) => {
+        if (cell.dataset.dropBound === "true") {
+            return;
+        }
+        cell.dataset.dropBound = "true";
+
         cell.addEventListener("dragover", (event) => {
             event.preventDefault();
             if (draggedCard && cell.dataset.grupo === draggedCard.dataset.groupId && cell.textContent.trim() !== "RECESO") {
@@ -108,6 +129,36 @@ document.addEventListener("DOMContentLoaded", () => {
                 cell.innerHTML = "";
                 cell.appendChild(placedCard);
             }
+            updateFichaCounters();
+        });
+    };
+
+    const bindBoardInteractions = (board = document) => {
+        board.querySelectorAll(".assignment-card").forEach(bindCardDrag);
+        board.querySelectorAll(".drop-cell").forEach(bindDropCell);
+    };
+
+    bindBoardInteractions();
+
+    document.querySelectorAll(".assignment-tray").forEach((tray) => {
+        tray.addEventListener("dragover", (event) => {
+            if (draggedCard && draggedCard.classList.contains("placed-card")) {
+                event.preventDefault();
+                tray.classList.add("tray-return-active");
+            }
+        });
+
+        tray.addEventListener("dragleave", () => {
+            tray.classList.remove("tray-return-active");
+        });
+
+        tray.addEventListener("drop", (event) => {
+            if (!draggedCard || !draggedCard.classList.contains("placed-card")) {
+                return;
+            }
+            event.preventDefault();
+            tray.classList.remove("tray-return-active");
+            draggedCard.remove();
             updateFichaCounters();
         });
     });
@@ -270,6 +321,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (label) {
                     label.textContent = result.last_saved;
                 }
+                const scheduleGrid = board.querySelector(".schedule-grid");
+                if (scheduleGrid) {
+                    boardSnapshots.set(board.id, getCleanScheduleHtml(scheduleGrid));
+                }
                 button.textContent = "Guardado";
                 updateFichaCounters();
                 window.setTimeout(() => {
@@ -281,6 +336,33 @@ document.addEventListener("DOMContentLoaded", () => {
                 button.disabled = false;
                 alert(error.message);
             }
+        });
+    });
+
+    document.querySelectorAll("[data-group-board]").forEach((board) => {
+        const scheduleGrid = board.querySelector(".schedule-grid");
+        if (scheduleGrid) {
+            boardSnapshots.set(board.id, getCleanScheduleHtml(scheduleGrid));
+        }
+    });
+
+    document.querySelectorAll("[data-cancel-board]").forEach((button) => {
+        button.addEventListener("click", () => {
+            const board = button.closest("[data-group-board]");
+            const scheduleGrid = board.querySelector(".schedule-grid");
+            const snapshot = boardSnapshots.get(board.id);
+
+            if (!scheduleGrid || snapshot === undefined) {
+                return;
+            }
+
+            scheduleGrid.innerHTML = snapshot;
+            bindBoardInteractions(board);
+            updateFichaCounters();
+            button.textContent = "Cancelado";
+            window.setTimeout(() => {
+                button.textContent = "Cancelar";
+            }, 900);
         });
     });
 });

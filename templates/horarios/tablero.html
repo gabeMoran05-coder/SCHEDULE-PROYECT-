@@ -83,7 +83,10 @@
                         <h2>{{ board.grupo.grado }}{{ board.grupo.letra }}</h2>
                         <small>Ultimo guardado: <span data-last-saved>{% if board.last_saved %}{{ board.last_saved|date:"d/m/Y H:i" }}{% else %}Sin guardar{% endif %}</span></small>
                     </div>
-                    <button class="mini-button save-board-button" type="button" data-save-board>Guardar</button>
+                    <div class="board-actions">
+                        <button class="mini-button save-board-button" type="button" data-save-board>Guardar</button>
+                        <button class="mini-button cancel-board-button" type="button" data-cancel-board>Cancelar</button>
+                    </div>
                 </div>
                 <div class="schedule-grid">
                     <div class="schedule-cell schedule-head">Hora</div>

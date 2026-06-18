@@ -796,6 +796,11 @@ input[type="checkbox"] {
     top: 18px;
 }
 
+.assignment-tray.tray-return-active {
+    background: #ecfeff;
+    box-shadow: inset 0 0 0 2px var(--brand);
+}
+
 .assignment-tray h2,
 .group-board h2 {
     font-size: 18px;
@@ -1048,7 +1053,19 @@ input[type="checkbox"] {
     font-weight: 700;
 }
 
+.board-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
 .save-board-button {
+    cursor: pointer;
+}
+
+.cancel-board-button {
+    background: #f8fcff;
     cursor: pointer;
 }
 
