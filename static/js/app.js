@@ -172,6 +172,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (boardFilters && groupBoards.length) {
         const filterButtons = boardFilters.querySelectorAll("[data-filter-type]");
+        const groupFilterButtons = boardFilters.querySelectorAll(".group-filter-chip");
         const filterToggle = boardFilters.querySelector("[data-filter-toggle]");
 
         const setActiveFilter = (activeButton) => {
@@ -216,9 +217,20 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         };
 
+        const showGroupChips = ({ grade }) => {
+            groupFilterButtons.forEach((button) => {
+                const isVisible = !grade || button.dataset.grade === grade;
+                button.hidden = !isVisible;
+                if (!isVisible) {
+                    button.classList.remove("active");
+                }
+            });
+        };
+
         const applyFilter = ({ grade, groupId, groupCode }) => {
             showBoards({ grade, groupId });
             showTrayCards({ grade, groupId, groupCode });
+            showGroupChips({ grade });
         };
 
         const getActiveFilter = () => {
