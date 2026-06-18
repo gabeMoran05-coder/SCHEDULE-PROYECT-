@@ -627,6 +627,18 @@ textarea:focus {
     color: var(--muted);
 }
 
+.kardex-positive {
+    color: var(--success);
+}
+
+.kardex-negative {
+    color: var(--danger);
+}
+
+.kardex-table td {
+    vertical-align: top;
+}
+
 .form-fieldset {
     border: 1px solid var(--line);
     border-radius: 12px;

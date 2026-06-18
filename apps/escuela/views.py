@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from apps.horarios.models import BloqueHorario, DiaSemana, FichaAsignacion, HorarioClase
 
 from .forms import AlumnoForm, AsignacionMateriaForm, CicloEscolarForm, DocenteForm, GrupoForm, InstitucionForm, MateriaForm
-from .models import Alumno, AsignacionDocenteMateria, CicloEscolar, ContratoDocente, Docente, Grupo, Institucion, Materia
+from .models import Alumno, AsignacionDocenteMateria, CicloEscolar, ContratoDocente, Docente, Grupo, Institucion, KardexDocente, Materia
 from .selectors import get_selected_cycle, get_selected_institution
 
 
@@ -67,6 +67,20 @@ def _apply_estado(queryset, estado):
     if estado == "todos":
         return queryset
     return queryset.filter(activo=True)
+
+
+def _registrar_kardex_docente(request, docente, tipo, referencia="", descripcion="", contrato=None, horas_antes=0, horas_despues=0):
+    KardexDocente.objects.create(
+        docente=docente,
+        contrato=contrato,
+        tipo=tipo,
+        referencia=referencia,
+        descripcion=descripcion,
+        horas_antes=horas_antes,
+        horas_despues=horas_despues,
+        horas_movimiento=horas_despues - horas_antes,
+        responsable=request.user if request.user.is_authenticated else None,
+    )
 
 
 @login_required
@@ -244,6 +258,7 @@ def docente_detalle(request, docente_id):
             if form.is_valid():
                 materia = form.cleaned_data["materia"]
                 asignacion = AsignacionDocenteMateria.objects.filter(contrato=contrato, materia=materia).first()
+                horas_antes = asignacion.horas_semanales if asignacion else 0
                 if asignacion is None:
                     asignacion = form.save(commit=False)
                     asignacion.contrato = contrato
@@ -267,11 +282,35 @@ def docente_detalle(request, docente_id):
                         },
                     )
 
+                grupos_texto = ", ".join(f"{grupo.grado}{grupo.letra}" for grupo in form.cleaned_data["grupos"])
+                _registrar_kardex_docente(
+                    request,
+                    docente,
+                    KardexDocente.TipoMovimiento.ASIGNACION,
+                    referencia=f"{materia.nombre} - {grupos_texto}",
+                    descripcion="Asignacion o ajuste de materia en el ciclo seleccionado.",
+                    contrato=contrato,
+                    horas_antes=horas_antes,
+                    horas_despues=asignacion.horas_semanales,
+                )
                 messages.success(request, "Materia asignada correctamente.")
                 return redirect("escuela:docente_detalle", docente_id=docente.id)
         elif action == "quitar_materia":
             asignacion = get_object_or_404(AsignacionDocenteMateria, id=request.POST.get("asignacion_id"), contrato=contrato)
+            materia = asignacion.materia
+            grupos_texto = ", ".join(f"{grupo.grado}{grupo.letra}" for grupo in asignacion.grupos.all())
+            horas_antes = asignacion.horas_semanales
             asignacion.delete()
+            _registrar_kardex_docente(
+                request,
+                docente,
+                KardexDocente.TipoMovimiento.RETIRO,
+                referencia=f"{materia.nombre} - {grupos_texto}",
+                descripcion="Retiro de materia asignada. Estas horas deben revisarse para redistribucion.",
+                contrato=contrato,
+                horas_antes=horas_antes,
+                horas_despues=0,
+            )
             messages.success(request, "Materia desasignada correctamente.")
             return redirect("escuela:docente_detalle", docente_id=docente.id)
     else:
@@ -297,6 +336,19 @@ def docente_detalle(request, docente_id):
         }
         for bloque in bloques
     ]
+    carga_redistribuir = []
+    for asignacion in asignaciones:
+        grupos = list(asignacion.grupos.all())
+        carga_redistribuir.append(
+            {
+                "materia": asignacion.materia,
+                "grupos": grupos,
+                "horas_por_grupo": asignacion.horas_semanales,
+                "horas_totales": asignacion.horas_semanales * len(grupos),
+            }
+        )
+    total_redistribuir = sum(item["horas_totales"] for item in carga_redistribuir)
+    kardex_docente = docente.kardex.select_related("responsable", "contrato__institucion", "contrato__ciclo")[:12]
 
     context = {
         "docente": docente,
@@ -307,6 +359,9 @@ def docente_detalle(request, docente_id):
         "horas_disponibles": horas_disponibles,
         "dias": DiaSemana.choices,
         "horario_docente": horario_docente,
+        "kardex_docente": kardex_docente,
+        "carga_redistribuir": carga_redistribuir,
+        "total_redistribuir": total_redistribuir,
     }
     return render(request, "escuela/docentes/detalle.html", context)
 
@@ -319,7 +374,7 @@ def docente_crear(request):
     if request.method == "POST" and form.is_valid():
         docente = form.save()
         if ciclo_activo:
-            ContratoDocente.objects.update_or_create(
+            contrato, _ = ContratoDocente.objects.update_or_create(
                 docente=docente,
                 institucion=ciclo_activo.institucion,
                 ciclo=ciclo_activo,
@@ -328,6 +383,16 @@ def docente_crear(request):
                     "es_tutor": form.cleaned_data["es_tutor"],
                     "activo": True,
                 },
+            )
+            _registrar_kardex_docente(
+                request,
+                docente,
+                KardexDocente.TipoMovimiento.ALTA,
+                referencia=f"{ciclo_activo.institucion.nombre} - {ciclo_activo.nombre}",
+                descripcion="Alta de docente en la escuela y ciclo seleccionados.",
+                contrato=contrato,
+                horas_antes=0,
+                horas_despues=contrato.horas_semanales,
             )
         messages.success(request, "Docente registrado correctamente.")
         return redirect("escuela:docentes")
@@ -359,8 +424,32 @@ def docente_editar(request, docente_id):
 def docente_toggle_activo(request, docente_id):
     docente = get_object_or_404(Docente, id=docente_id, contratos__institucion=get_selected_institution(request))
     if request.method == "POST":
+        contrato = docente.contratos.filter(institucion=get_selected_institution(request), ciclo=get_selected_cycle(request)).first()
+        horas_actuales = contrato.horas_semanales if contrato else 0
         docente.activo = not docente.activo
         docente.save(update_fields=["activo"])
+        if docente.activo:
+            _registrar_kardex_docente(
+                request,
+                docente,
+                KardexDocente.TipoMovimiento.RESTAURACION,
+                referencia="Restauracion de docente",
+                descripcion="El docente vuelve a estar disponible para asignaciones.",
+                contrato=contrato,
+                horas_antes=0,
+                horas_despues=horas_actuales,
+            )
+        else:
+            _registrar_kardex_docente(
+                request,
+                docente,
+                KardexDocente.TipoMovimiento.BAJA,
+                referencia="Ocultamiento o baja operativa",
+                descripcion="El docente queda oculto. Revisar sus horas para redistribucion.",
+                contrato=contrato,
+                horas_antes=horas_actuales,
+                horas_despues=0,
+            )
         messages.success(request, "Docente restaurado correctamente." if docente.activo else "Docente ocultado correctamente.")
     return redirect(request.POST.get("next") or "escuela:docentes")
 

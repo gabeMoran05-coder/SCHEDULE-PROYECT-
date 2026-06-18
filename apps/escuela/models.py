@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 
@@ -172,3 +173,33 @@ class AsignacionDocenteMateria(models.Model):
 
     def __str__(self):
         return f"{self.contrato.docente} - {self.materia}"
+
+
+class KardexDocente(models.Model):
+    class TipoMovimiento(models.TextChoices):
+        ALTA = "ALTA", "Alta"
+        CAMBIO_ESCUELA = "CAMBIO_ESCUELA", "Cambio de escuela"
+        ASIGNACION = "ASIGNACION", "Asignacion"
+        RETIRO = "RETIRO", "Retiro"
+        BAJA = "BAJA", "Baja"
+        RESTAURACION = "RESTAURACION", "Restauracion"
+        AJUSTE = "AJUSTE", "Ajuste"
+
+    docente = models.ForeignKey(Docente, on_delete=models.CASCADE, related_name="kardex")
+    contrato = models.ForeignKey(ContratoDocente, on_delete=models.SET_NULL, null=True, blank=True, related_name="kardex")
+    fecha = models.DateTimeField(auto_now_add=True)
+    tipo = models.CharField(max_length=24, choices=TipoMovimiento.choices)
+    referencia = models.CharField(max_length=160, blank=True)
+    descripcion = models.TextField(blank=True)
+    horas_antes = models.PositiveSmallIntegerField(default=0)
+    horas_despues = models.PositiveSmallIntegerField(default=0)
+    horas_movimiento = models.IntegerField(default=0)
+    responsable = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        ordering = ["-fecha"]
+        verbose_name = "Kardex docente"
+        verbose_name_plural = "Kardex docentes"
+
+    def __str__(self):
+        return f"{self.docente} - {self.get_tipo_display()} - {self.fecha:%Y-%m-%d %H:%M}"

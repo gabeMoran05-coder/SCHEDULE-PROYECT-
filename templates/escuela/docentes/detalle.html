@@ -40,6 +40,91 @@
     <section class="detail-section">
         <div class="section-title-row">
             <div>
+                <h2>Horas a redistribuir</h2>
+                <p class="muted">Si el docente se mueve de escuela o se da de baja, estas horas quedan como carga pendiente para reasignar.</p>
+            </div>
+            <span class="status-pill {% if total_redistribuir %}off{% else %}ok{% endif %}">{{ total_redistribuir }} h</span>
+        </div>
+
+        <div class="table-panel">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Materia</th>
+                        <th>Grupos</th>
+                        <th>Horas por grupo</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in carga_redistribuir %}
+                        <tr>
+                            <td><strong>{{ item.materia.nombre }}</strong><br><span class="muted">{{ item.materia.clave }}</span></td>
+                            <td>
+                                <div class="pill-row">
+                                    {% for grupo in item.grupos %}
+                                        <span class="group-pill">{{ grupo.grado }}{{ grupo.letra }}</span>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                            <td>{{ item.horas_por_grupo }} h</td>
+                            <td><strong>{{ item.horas_totales }} h</strong></td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="4">No hay carga para redistribuir.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="detail-section">
+        <div class="section-title-row">
+            <div>
+                <h2>Kardex reciente</h2>
+                <p class="muted">Movimientos de escuela, bajas, restauraciones y cambios de carga del docente.</p>
+            </div>
+        </div>
+
+        <div class="table-panel">
+            <table class="table kardex-table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Movimiento</th>
+                        <th>Horas</th>
+                        <th>Referencia</th>
+                        <th>Responsable</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for movimiento in kardex_docente %}
+                        <tr>
+                            <td>{{ movimiento.fecha|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                <strong>{{ movimiento.get_tipo_display }}</strong>
+                                <br><span class="muted">{{ movimiento.descripcion|default:"Sin descripcion" }}</span>
+                            </td>
+                            <td>
+                                <strong class="{% if movimiento.horas_movimiento < 0 %}kardex-negative{% elif movimiento.horas_movimiento > 0 %}kardex-positive{% endif %}">
+                                    {% if movimiento.horas_movimiento > 0 %}+{% endif %}{{ movimiento.horas_movimiento }} h
+                                </strong>
+                                <br><span class="muted">{{ movimiento.horas_antes }} -> {{ movimiento.horas_despues }}</span>
+                            </td>
+                            <td>{{ movimiento.referencia|default:"Sin referencia" }}</td>
+                            <td>{% if movimiento.responsable %}{{ movimiento.responsable.get_full_name|default:movimiento.responsable.username }}{% else %}Sistema{% endif %}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="5">Todavia no hay movimientos registrados.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="detail-section">
+        <div class="section-title-row">
+            <div>
                 <h2>Materias asignadas</h2>
                 <p class="muted">Estas materias generan fichas para el tablero de horarios.</p>
             </div>
