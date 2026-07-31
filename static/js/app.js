@@ -23,6 +23,68 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
+    const photoDialog = document.querySelector("[data-photo-dialog]");
+    const photoOpenButton = document.querySelector("[data-photo-open]");
+    const photoCloseButton = document.querySelector("[data-photo-close]");
+    const topbar = document.querySelector(".topbar");
+    const navOrb = document.querySelector("[data-nav-orb]");
+    let lastScrollY = window.scrollY;
+
+    if (photoDialog && photoOpenButton) {
+        photoOpenButton.addEventListener("click", () => {
+            if (typeof photoDialog.showModal === "function") {
+                photoDialog.showModal();
+            }
+        });
+
+        photoDialog.addEventListener("click", (event) => {
+            if (event.target === photoDialog) {
+                photoDialog.close();
+            }
+        });
+    }
+
+    if (photoDialog && photoCloseButton) {
+        photoCloseButton.addEventListener("click", () => {
+            photoDialog.close();
+        });
+    }
+
+    if (topbar && navOrb) {
+        const setNavOpen = (isOpen) => {
+            topbar.classList.toggle("nav-menu-open", isOpen);
+            navOrb.setAttribute("aria-expanded", String(isOpen));
+            navOrb.setAttribute("aria-label", isOpen ? "Ocultar menu" : "Mostrar menu");
+        };
+
+        const setNavCompact = (isCompact) => {
+            topbar.classList.toggle("nav-compact", isCompact);
+            if (!isCompact) {
+                setNavOpen(false);
+            }
+        };
+
+        navOrb.addEventListener("click", () => {
+            setNavOpen(!topbar.classList.contains("nav-menu-open"));
+        });
+
+        window.addEventListener("scroll", () => {
+            const currentScrollY = window.scrollY;
+            const isScrollingDown = currentScrollY > lastScrollY;
+
+            if (currentScrollY < 90) {
+                setNavCompact(false);
+            } else if (isScrollingDown && currentScrollY > 150) {
+                setNavCompact(true);
+                setNavOpen(false);
+            }
+
+            lastScrollY = currentScrollY;
+        }, { passive: true });
+
+        setNavCompact(window.scrollY > 150);
+    }
+
     const updateFichaCounters = () => {
         document.querySelectorAll(".assignment-card[data-max-hours]").forEach((trayCard) => {
             const fichaId = trayCard.dataset.fichaId;
@@ -78,11 +140,41 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         card.innerHTML = `
             <strong>${sourceCard.dataset.teacher || ""}</strong>
-            <span>${sourceCard.dataset.materia || ""} - ${sourceCard.dataset.groupLabel || ""}</span>
+            <span>${sourceCard.dataset.materia || ""}</span>
             <small>Aula ${sourceCard.dataset.aula || "pendiente"}</small>
         `;
         bindCardDrag(card);
         return card;
+    };
+
+    const getTeacherConflict = (targetCell, sourceCard) => {
+        if (!targetCell || !sourceCard || !sourceCard.dataset.teacher) {
+            return null;
+        }
+
+        const sameTimeCards = document.querySelectorAll(
+            `.drop-cell[data-dia="${targetCell.dataset.dia}"][data-bloque="${targetCell.dataset.bloque}"] .placed-card`
+        );
+
+        return Array.from(sameTimeCards).find((placedCard) => {
+            if (placedCard === sourceCard) {
+                return false;
+            }
+            if (placedCard.closest(".drop-cell") === targetCell) {
+                return false;
+            }
+            return placedCard.dataset.teacher === sourceCard.dataset.teacher;
+        });
+    };
+
+    const canDropCardInCell = (cell, card) => {
+        if (!card || cell.textContent.trim() === "RECESO" || cell.dataset.grupo !== card.dataset.groupId) {
+            return false;
+        }
+        if (cell.querySelector(".placed-card") && cell !== dragOriginCell) {
+            return false;
+        }
+        return !getTeacherConflict(cell, card);
     };
 
     const bindDropCell = (cell) => {
@@ -93,28 +185,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
         cell.addEventListener("dragover", (event) => {
             event.preventDefault();
-            if (draggedCard && cell.dataset.grupo === draggedCard.dataset.groupId && cell.textContent.trim() !== "RECESO") {
+            if (canDropCardInCell(cell, draggedCard)) {
                 cell.classList.add("drag-over");
+                cell.removeAttribute("title");
             } else {
                 cell.classList.add("drop-rejected");
+                const conflict = getTeacherConflict(cell, draggedCard);
+                if (conflict) {
+                    cell.title = `${draggedCard.dataset.teacher} ya tiene clase en ${conflict.dataset.groupLabel || "otro grupo"} a esta hora.`;
+                }
             }
         });
 
         cell.addEventListener("dragleave", () => {
             cell.classList.remove("drag-over");
             cell.classList.remove("drop-rejected");
+            cell.removeAttribute("title");
         });
 
         cell.addEventListener("drop", (event) => {
             event.preventDefault();
             cell.classList.remove("drag-over");
             cell.classList.remove("drop-rejected");
+            cell.removeAttribute("title");
 
-            if (!draggedCard || cell.textContent.trim() === "RECESO" || cell.dataset.grupo !== draggedCard.dataset.groupId) {
-                return;
-            }
-
-            if (cell.querySelector(".placed-card") && cell !== dragOriginCell) {
+            if (!canDropCardInCell(cell, draggedCard)) {
                 return;
             }
 

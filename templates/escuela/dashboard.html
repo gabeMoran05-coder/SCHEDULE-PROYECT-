@@ -1,48 +1,158 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard | Sistema Secundaria{% endblock %}
+{% block title %}Inicio | Sistema Secundaria{% endblock %}
 
 {% block content %}
-<section class="page-card">
-<header class="page-header">
-    <div>
-        <h1>Dashboard</h1>
-        <p>Resumen inicial de la base de datos escolar.</p>
-    </div>
-    <a class="button" href="{% url 'escuela:institucion_crear' %}">Agregar institucion</a>
-</header>
+<section class="dashboard-home">
+    <header class="school-hero-card">
+        <div class="school-hero-copy">
+            <span class="eyebrow">Bienvenido</span>
+            <h1>{{ institucion_actual.nombre|default:"Sistema escolar" }}</h1>
+            <p>
+                Panel inicial para consultar la escuela, sus docentes, grupos y ciclos activos sin mezclar informacion entre instituciones.
+            </p>
+            <div class="hero-actions">
+                <a class="button" href="{% url 'escuela:docentes' %}">Ver docentes</a>
+                <a class="button button-secondary" href="{% url 'horarios:tablero' %}">Abrir tablero</a>
+                <a class="button button-secondary" href="{% url 'escuela:institucion_crear' %}">Agregar institucion</a>
+            </div>
+        </div>
+        <div class="school-hero-media" aria-hidden="true">
+            <div class="hero-photo hero-photo-main"></div>
+            <div class="hero-photo-stack">
+                <div class="hero-photo hero-photo-small one"></div>
+                <div class="hero-photo hero-photo-small two"></div>
+            </div>
+        </div>
+    </header>
 
-<section class="grid cols-3">
-    <article class="stat-card">
-        <span>Instituciones</span>
-        <strong>{{ total_instituciones }}</strong>
-    </article>
-    <article class="stat-card">
-        <span>Alumnos activos</span>
-        <strong>{{ total_alumnos }}</strong>
-    </article>
-    <article class="stat-card">
-        <span>Docentes activos</span>
-        <strong>{{ total_docentes }}</strong>
-    </article>
-    <article class="stat-card">
-        <span>Grupos</span>
-        <strong>{{ total_grupos }}</strong>
-    </article>
-</section>
+    <section class="school-overview-grid">
+        <article class="overview-card">
+            <span>Alumnos activos</span>
+            <strong>{{ total_alumnos }}</strong>
+            <small>Registrados en esta escuela</small>
+        </article>
+        <article class="overview-card">
+            <span>Docentes activos</span>
+            <strong>{{ total_docentes }}</strong>
+            <small>Con contrato en el ciclo</small>
+        </article>
+        <article class="overview-card">
+            <span>Grupos</span>
+            <strong>{{ total_grupos }}</strong>
+            <small>Abiertos en el ciclo actual</small>
+        </article>
+        <article class="overview-card">
+            <span>Materias</span>
+            <strong>{{ total_materias }}</strong>
+            <small>Catalogadas para la escuela</small>
+        </article>
+    </section>
 
-<section class="content-panel" style="margin-top: 16px;">
-    <h2>Ciclo activo</h2>
-    {% if ciclo_activo %}
-        <p>{{ ciclo_activo.nombre }} en {{ ciclo_activo.institucion.nombre }}</p>
-    {% else %}
-        <p class="muted">Todavia no hay un ciclo activo. Puedes crearlo desde el administrador.</p>
-    {% endif %}
-</section>
+    <section class="dashboard-two-col">
+        <article class="school-profile-card">
+            <div class="section-title-row">
+                <div>
+                    <h2>Datos de la escuela</h2>
+                    <p class="muted">Informacion rapida de la institucion seleccionada.</p>
+                </div>
+            </div>
+            <dl class="compact-list">
+                <div>
+                    <dt>Escuela</dt>
+                    <dd>{{ institucion_actual.nombre|default:"Sin escuela seleccionada" }}</dd>
+                </div>
+                <div>
+                    <dt>CCT</dt>
+                    <dd>{{ institucion_actual.clave_cct|default:"Sin CCT" }}</dd>
+                </div>
+                <div>
+                    <dt>Ubicacion</dt>
+                    <dd>{{ ubicacion|default:"Ubicacion pendiente" }}</dd>
+                </div>
+                <div>
+                    <dt>Ciclo activo</dt>
+                    <dd>{% if ciclo_activo %}{{ ciclo_activo.nombre }}{% else %}Sin ciclo activo{% endif %}</dd>
+                </div>
+                <div>
+                    <dt>Periodos</dt>
+                    <dd>{{ total_periodos }} periodo(s)</dd>
+                </div>
+            </dl>
+        </article>
 
-<section class="content-panel" style="margin-top: 16px;">
-    <h2>Modelo preparado</h2>
-    <p class="muted">El sistema separa instituciones, ciclos escolares, tres periodos, profesores por contrato, materias sin duplicar y grupos variables por grado.</p>
-</section>
+        <article class="quick-actions-card">
+            <div class="section-title-row">
+                <div>
+                    <h2>Accesos rapidos</h2>
+                    <p class="muted">Lo que normalmente se ocupa al entrar.</p>
+                </div>
+            </div>
+            <div class="quick-action-grid">
+                <a href="{% url 'escuela:alumno_crear' %}">
+                    <strong>Agregar alumno</strong>
+                    <span>Alta rapida en la escuela actual</span>
+                </a>
+                <a href="{% url 'escuela:docente_crear' %}">
+                    <strong>Agregar docente</strong>
+                    <span>Registrar contrato y horas</span>
+                </a>
+                <a href="{% url 'escuela:grupo_crear' %}">
+                    <strong>Crear grupo</strong>
+                    <span>Grado, letra, turno y aula</span>
+                </a>
+                <a href="{% url 'escuela:materia_crear' %}">
+                    <strong>Crear materia</strong>
+                    <span>Catalogo sin duplicar</span>
+                </a>
+            </div>
+        </article>
+    </section>
+
+    <section class="dashboard-two-col location-row">
+        <article class="map-card map-showcase">
+            <div class="map-info-panel">
+                <span class="eyebrow">Ubicacion</span>
+                <h2>{{ institucion_actual.nombre|default:"Escuela seleccionada" }}</h2>
+                <p>{{ ubicacion|default:"Manzanillo, Colima" }}</p>
+                <div class="map-meta-row">
+                    <span>Vista escolar</span>
+                    <span>Mapa interactivo</span>
+                </div>
+                <a class="button" href="https://www.google.com/maps/place/Secundaria+Ricardo+Flores+Magon/@19.0237294,-104.3233727,17z/data=!3m1!4b1!4m6!3m5!1s0x8424d523104aa591:0x32c849ba59679f34!8m2!3d19.0237294!4d-104.3233727!16s%2Fg%2F1q6jzg60f" target="_blank" rel="noopener">Abrir en Google Maps</a>
+            </div>
+            <div class="map-frame">
+                <iframe
+                    title="Mapa de la escuela"
+                    loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade"
+                    src="{{ map_embed_url }}">
+                </iframe>
+            </div>
+        </article>
+
+        <article class="school-gallery-card">
+            <div class="section-title-row">
+                <div>
+                    <h2>Vida escolar</h2>
+                    <p class="muted">Una vista mas visual para ubicar el trabajo del dia.</p>
+                </div>
+            </div>
+            <div class="school-gallery">
+                <div class="gallery-tile tile-classroom">
+                    <strong>Aulas</strong>
+                    <span>Grupos, materias y horarios</span>
+                </div>
+                <div class="gallery-tile tile-teachers">
+                    <strong>Docentes</strong>
+                    <span>Cargas, kardex y movimientos</span>
+                </div>
+                <div class="gallery-tile tile-calendar">
+                    <strong>Ciclo escolar</strong>
+                    <span>{{ ciclo_activo.nombre|default:"Pendiente" }}</span>
+                </div>
+            </div>
+        </article>
+    </section>
 </section>
 {% endblock %}

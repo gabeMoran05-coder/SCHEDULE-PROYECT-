@@ -11,6 +11,11 @@
     {% if user.is_authenticated %}
         <div class="layout">
             <header class="topbar">
+                <button class="nav-orb" type="button" data-nav-orb aria-label="Mostrar menu" aria-expanded="false">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
                 <nav class="nav">
                     <a href="{% url 'escuela:dashboard' %}">Inicio</a>
                     <a href="{% url 'escuela:alumnos' %}">Alumnos</a>
@@ -39,16 +44,7 @@
                             <a href="{% url 'escuela:institucion_crear' %}">Agregar escuela</a>
                         </div>
                     </details>
-                    <form action="{% url 'usuarios:logout' %}" method="post">
-                        {% csrf_token %}
-                        <button type="submit">Cerrar sesion</button>
-                    </form>
-                </nav>
-            </header>
-            <main class="main">
-                <section class="cycle-strip">
-                    <span>Periodo escolar</span>
-                    <details class="cycle-switcher">
+                    <details class="cycle-switcher nav-cycle-switcher">
                         <summary>
                             <span>{{ nav_selected_cycle.nombre|default:"Sin ciclo" }}</span>
                         </summary>
@@ -67,7 +63,13 @@
                             <a href="{% url 'escuela:ciclo_crear' %}">Agregar ciclo</a>
                         </div>
                     </details>
-                </section>
+                    <form action="{% url 'usuarios:logout' %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit">Cerrar sesion</button>
+                    </form>
+                </nav>
+            </header>
+            <main class="main">
                 {% if messages %}
                     <div class="messages">
                         {% for message in messages %}

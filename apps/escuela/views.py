@@ -1,4 +1,5 @@
 from datetime import date, time
+from urllib.parse import quote_plus
 
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -7,8 +8,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from apps.horarios.models import BloqueHorario, DiaSemana, FichaAsignacion, HorarioClase
 
-from .forms import AlumnoForm, AsignacionMateriaForm, CicloEscolarForm, DocenteForm, GrupoForm, InstitucionForm, MateriaForm
-from .models import Alumno, AsignacionDocenteMateria, CicloEscolar, ContratoDocente, Docente, Grupo, Institucion, KardexDocente, Materia
+from .forms import AlumnoForm, AsignacionMateriaForm, CicloEscolarForm, DocenteForm, DocumentoAlumnoForm, GrupoForm, InstitucionForm, MateriaForm, MovimientoDocenteForm
+from .models import Alumno, AsignacionDocenteMateria, CicloEscolar, ContratoDocente, Docente, DocumentoAlumno, Grupo, Inscripcion, Institucion, KardexAlumno, KardexDocente, Materia
 from .selectors import get_selected_cycle, get_selected_institution
 
 
@@ -69,16 +70,40 @@ def _apply_estado(queryset, estado):
     return queryset.filter(activo=True)
 
 
-def _registrar_kardex_docente(request, docente, tipo, referencia="", descripcion="", contrato=None, horas_antes=0, horas_despues=0):
+def _registrar_kardex_docente(
+    request,
+    docente,
+    tipo,
+    referencia="",
+    descripcion="",
+    contrato=None,
+    horas_antes=0,
+    horas_despues=0,
+    motivo="",
+    documento_referencia="",
+):
     KardexDocente.objects.create(
         docente=docente,
         contrato=contrato,
         tipo=tipo,
+        motivo=motivo,
         referencia=referencia,
         descripcion=descripcion,
+        documento_referencia=documento_referencia,
         horas_antes=horas_antes,
         horas_despues=horas_despues,
         horas_movimiento=horas_despues - horas_antes,
+        responsable=request.user if request.user.is_authenticated else None,
+    )
+
+
+def _registrar_kardex_alumno(request, alumno, tipo, referencia="", descripcion="", inscripcion=None):
+    KardexAlumno.objects.create(
+        alumno=alumno,
+        inscripcion=inscripcion,
+        tipo=tipo,
+        referencia=referencia,
+        descripcion=descripcion,
         responsable=request.user if request.user.is_authenticated else None,
     )
 
@@ -87,15 +112,28 @@ def _registrar_kardex_docente(request, docente, tipo, referencia="", descripcion
 def dashboard(request):
     institucion = get_selected_institution(request)
     ciclo_activo = get_selected_cycle(request)
+    ubicacion = ""
+    if institucion:
+        ubicacion = institucion.direccion.strip()
+        if not ubicacion and "ricardo flores magon" in institucion.nombre.lower():
+            ubicacion = "Manzanillo, Colima"
+    map_query = "Secundaria Ricardo Flores Magon Manzanillo Colima"
+    if institucion:
+        map_query = f"{institucion.nombre} {ubicacion}".strip()
+        if "ricardo flores magon" in institucion.nombre.lower():
+            map_query = "19.0237294,-104.3233727"
     context = {
         "total_instituciones": Institucion.objects.count(),
         "institucion_actual": institucion,
         "ciclo_activo": ciclo_activo,
+        "ubicacion": ubicacion,
+        "map_embed_url": f"https://www.google.com/maps?q={quote_plus(map_query)}&output=embed",
         "total_alumnos": Alumno.objects.filter(institucion=institucion, activo=True).count() if institucion else 0,
         "total_docentes": ContratoDocente.objects.filter(institucion=institucion, ciclo=ciclo_activo, activo=True).count() if institucion and ciclo_activo else 0,
         "total_contratos": ContratoDocente.objects.filter(institucion=institucion, ciclo=ciclo_activo, activo=True).count() if institucion and ciclo_activo else 0,
         "total_grupos": Grupo.objects.filter(ciclo=ciclo_activo).count() if ciclo_activo else 0,
         "total_materias": Materia.objects.filter(institucion=institucion).count() if institucion else 0,
+        "total_periodos": ciclo_activo.periodos.count() if ciclo_activo else 0,
     }
     return render(request, "escuela/dashboard.html", context)
 
@@ -123,30 +161,47 @@ def seleccionar_ciclo(request):
 @login_required
 def alumnos(request):
     institucion = get_selected_institution(request)
-    alumnos_qs = Alumno.objects.select_related("institucion", "tutor").filter(institucion=institucion)
+    ciclo = get_selected_cycle(request)
     busqueda = request.GET.get("q", "").strip()
     estado = request.GET.get("estado", "activo")
+    grado = request.GET.get("grado", "")
+    grupo_id = request.GET.get("grupo", "")
 
-    if busqueda:
-        alumnos_qs = alumnos_qs.filter(
-            Q(matricula__icontains=busqueda)
-            | Q(nombres__icontains=busqueda)
-            | Q(apellidos__icontains=busqueda)
-            | Q(tutor__nombre__icontains=busqueda)
-        )
-    alumnos_qs = _apply_estado(alumnos_qs, estado)
-    alumnos_qs, sort, direction = _apply_sort(
-        request,
-        alumnos_qs,
-        {"matricula": "matricula", "nombre": "apellidos", "tutor": "tutor__nombre", "estado": "activo"},
-        "nombre",
+    inscripciones_qs = Inscripcion.objects.select_related("alumno", "alumno__institucion", "alumno__tutor", "grupo").filter(
+        ciclo=ciclo,
+        alumno__institucion=institucion,
     )
+    if busqueda:
+        inscripciones_qs = inscripciones_qs.filter(
+            Q(alumno__matricula__icontains=busqueda)
+            | Q(alumno__nombres__icontains=busqueda)
+            | Q(alumno__apellidos__icontains=busqueda)
+            | Q(alumno__tutor__nombre__icontains=busqueda)
+        )
+    if grado:
+        inscripciones_qs = inscripciones_qs.filter(grupo__grado=grado)
+    if grupo_id:
+        inscripciones_qs = inscripciones_qs.filter(grupo_id=grupo_id)
+    if estado == "oculto":
+        inscripciones_qs = inscripciones_qs.filter(alumno__activo=False)
+    elif estado != "todos":
+        inscripciones_qs = inscripciones_qs.filter(alumno__activo=True)
 
-    alumnos_qs = alumnos_qs[:80]
+    grupos = Grupo.objects.filter(ciclo=ciclo, activo=True).order_by("grado", "letra") if ciclo else Grupo.objects.none()
+    inscripciones_qs = inscripciones_qs.order_by("grupo__grado", "grupo__letra", "numero_lista", "alumno__apellidos")[:300]
+
     return render(
         request,
         "escuela/alumnos/index.html",
-        {"alumnos": alumnos_qs, "busqueda": busqueda, "estado": estado, "sort": sort, "dir": direction},
+        {
+            "inscripciones": inscripciones_qs,
+            "grupos": grupos,
+            "busqueda": busqueda,
+            "estado": estado,
+            "grado": grado,
+            "grupo_id": grupo_id,
+            "total_alumnos_ciclo": Inscripcion.objects.filter(ciclo=ciclo, alumno__institucion=institucion).count() if ciclo else 0,
+        },
     )
 
 
@@ -157,7 +212,16 @@ def alumno_crear(request):
     if request.method == "POST" and form.is_valid():
         alumno = form.save(commit=False)
         alumno.institucion = institucion
+        if alumno.tutor and not alumno.tutor.pk:
+            alumno.tutor.save()
         alumno.save()
+        _registrar_kardex_alumno(
+            request,
+            alumno,
+            KardexAlumno.TipoMovimiento.ALTA,
+            referencia=alumno.matricula,
+            descripcion="Alta manual de alumno.",
+        )
         messages.success(request, "Alumno registrado correctamente.")
         return redirect("escuela:alumnos")
     return render(request, "escuela/formulario.html", {"form": form, "titulo": "Agregar alumno", "volver_url": "escuela:alumnos"})
@@ -169,8 +233,15 @@ def alumno_editar(request, alumno_id):
     form = AlumnoForm(request.POST or None, instance=alumno)
     if request.method == "POST" and form.is_valid():
         form.save()
+        _registrar_kardex_alumno(
+            request,
+            alumno,
+            KardexAlumno.TipoMovimiento.EDICION,
+            referencia="Ficha del alumno",
+            descripcion="Actualizacion de datos generales, tutor, emergencia o datos medicos.",
+        )
         messages.success(request, "Alumno actualizado correctamente.")
-        return redirect("escuela:alumnos")
+        return redirect("escuela:alumno_detalle", alumno_id=alumno.id)
     return render(request, "escuela/formulario.html", {"form": form, "titulo": "Editar alumno", "volver_url": "escuela:alumnos"})
 
 
@@ -180,8 +251,57 @@ def alumno_toggle_activo(request, alumno_id):
     if request.method == "POST":
         alumno.activo = not alumno.activo
         alumno.save(update_fields=["activo"])
+        _registrar_kardex_alumno(
+            request,
+            alumno,
+            KardexAlumno.TipoMovimiento.RESTAURACION if alumno.activo else KardexAlumno.TipoMovimiento.BAJA,
+            referencia="Estado del alumno",
+            descripcion="Alumno restaurado en el sistema." if alumno.activo else "Alumno ocultado del listado operativo.",
+            inscripcion=alumno.inscripcion_set.filter(ciclo=get_selected_cycle(request)).first(),
+        )
         messages.success(request, "Alumno restaurado correctamente." if alumno.activo else "Alumno ocultado correctamente.")
     return redirect(request.POST.get("next") or "escuela:alumnos")
+
+
+@login_required
+def alumno_detalle(request, alumno_id):
+    alumno = get_object_or_404(Alumno.objects.select_related("institucion", "tutor"), id=alumno_id, institucion=get_selected_institution(request))
+    ciclo = get_selected_cycle(request)
+    inscripcion = alumno.inscripcion_set.select_related("grupo", "ciclo").filter(ciclo=ciclo).first()
+    kardex_alumno = alumno.kardex.select_related("responsable", "inscripcion__grupo")[:20]
+    documentos = alumno.documentos.select_related("responsable")[:20]
+    documento_form = DocumentoAlumnoForm()
+    context = {
+        "alumno": alumno,
+        "inscripcion": inscripcion,
+        "kardex_alumno": kardex_alumno,
+        "documentos": documentos,
+        "documento_form": documento_form,
+    }
+    return render(request, "escuela/alumnos/detalle.html", context)
+
+
+@login_required
+def alumno_documento_crear(request, alumno_id):
+    alumno = get_object_or_404(Alumno, id=alumno_id, institucion=get_selected_institution(request))
+    form = DocumentoAlumnoForm(request.POST or None, request.FILES or None)
+    if request.method == "POST" and form.is_valid():
+        documento = form.save(commit=False)
+        documento.alumno = alumno
+        documento.responsable = request.user
+        documento.save()
+        _registrar_kardex_alumno(
+            request,
+            alumno,
+            KardexAlumno.TipoMovimiento.DOCUMENTO,
+            referencia=documento.get_tipo_display(),
+            descripcion=f"Documento subido: {documento.nombre}",
+            inscripcion=alumno.inscripcion_set.filter(ciclo=get_selected_cycle(request)).first(),
+        )
+        messages.success(request, "Documento cargado correctamente.")
+    elif request.method == "POST":
+        messages.error(request, "Revisa los datos del documento.")
+    return redirect("escuela:alumno_detalle", alumno_id=alumno.id)
 
 
 @login_required
@@ -368,7 +488,7 @@ def docente_detalle(request, docente_id):
 
 @login_required
 def docente_crear(request):
-    form = DocenteForm(request.POST or None)
+    form = DocenteForm(request.POST or None, request.FILES or None)
     ciclo_activo = get_selected_cycle(request)
 
     if request.method == "POST" and form.is_valid():
@@ -412,7 +532,7 @@ def docente_crear(request):
 @login_required
 def docente_editar(request, docente_id):
     docente = get_object_or_404(Docente, id=docente_id, contratos__institucion=get_selected_institution(request))
-    form = DocenteForm(request.POST or None, instance=docente)
+    form = DocenteForm(request.POST or None, request.FILES or None, instance=docente)
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Docente actualizado correctamente.")
@@ -423,9 +543,20 @@ def docente_editar(request, docente_id):
 @login_required
 def docente_toggle_activo(request, docente_id):
     docente = get_object_or_404(Docente, id=docente_id, contratos__institucion=get_selected_institution(request))
+    contrato = docente.contratos.filter(institucion=get_selected_institution(request), ciclo=get_selected_cycle(request)).first()
+    horas_actuales = contrato.horas_semanales if contrato else 0
+    movimiento = "restaurar" if not docente.activo else "ocultar"
+    form = MovimientoDocenteForm(request.POST or None)
+    next_url = request.POST.get("next") or request.GET.get("next") or "escuela:docentes"
+
     if request.method == "POST":
-        contrato = docente.contratos.filter(institucion=get_selected_institution(request), ciclo=get_selected_cycle(request)).first()
-        horas_actuales = contrato.horas_semanales if contrato else 0
+        if not form.is_valid():
+            return render(
+                request,
+                "escuela/docentes/movimiento.html",
+                {"docente": docente, "contrato": contrato, "form": form, "movimiento": movimiento, "next_url": next_url},
+            )
+
         docente.activo = not docente.activo
         docente.save(update_fields=["activo"])
         if docente.activo:
@@ -434,10 +565,12 @@ def docente_toggle_activo(request, docente_id):
                 docente,
                 KardexDocente.TipoMovimiento.RESTAURACION,
                 referencia="Restauracion de docente",
-                descripcion="El docente vuelve a estar disponible para asignaciones.",
+                descripcion=form.cleaned_data["descripcion"],
                 contrato=contrato,
                 horas_antes=0,
                 horas_despues=horas_actuales,
+                motivo=form.cleaned_data["motivo"],
+                documento_referencia=form.cleaned_data["documento_referencia"],
             )
         else:
             _registrar_kardex_docente(
@@ -445,13 +578,21 @@ def docente_toggle_activo(request, docente_id):
                 docente,
                 KardexDocente.TipoMovimiento.BAJA,
                 referencia="Ocultamiento o baja operativa",
-                descripcion="El docente queda oculto. Revisar sus horas para redistribucion.",
+                descripcion=form.cleaned_data["descripcion"],
                 contrato=contrato,
                 horas_antes=horas_actuales,
                 horas_despues=0,
+                motivo=form.cleaned_data["motivo"],
+                documento_referencia=form.cleaned_data["documento_referencia"],
             )
         messages.success(request, "Docente restaurado correctamente." if docente.activo else "Docente ocultado correctamente.")
-    return redirect(request.POST.get("next") or "escuela:docentes")
+        return redirect(next_url)
+
+    return render(
+        request,
+        "escuela/docentes/movimiento.html",
+        {"docente": docente, "contrato": contrato, "form": form, "movimiento": movimiento, "next_url": next_url},
+    )
 
 
 @login_required

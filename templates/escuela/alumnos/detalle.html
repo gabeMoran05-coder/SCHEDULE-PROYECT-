@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}{{ alumno.apellidos }} {{ alumno.nombres }} | Sistema Secundaria{% endblock %}
+
+{% block content %}
+<section class="page-card">
+    <header class="teacher-hero">
+        <div>
+            <h1>{{ alumno.apellidos }} {{ alumno.nombres }}</h1>
+            <p>
+                {{ alumno.matricula }}
+                {% if inscripcion %} - {{ inscripcion.grupo.grado }}{{ inscripcion.grupo.letra }} - Lista {{ inscripcion.numero_lista|default:"-" }}{% endif %}
+            </p>
+        </div>
+        <div class="teacher-action-row">
+            <a class="button" href="#kardex">Kardex</a>
+            <a class="button button-secondary" href="#documentos">Documentos</a>
+            <a class="button button-secondary" href="{% url 'escuela:alumno_editar' alumno.id %}">Editar ficha</a>
+            <form method="post" action="{% url 'escuela:alumno_toggle_activo' alumno.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <button class="danger-button" type="submit">{% if alumno.activo %}Ocultar{% else %}Restaurar{% endif %}</button>
+            </form>
+            <a class="button button-secondary" href="{% url 'escuela:alumnos' %}">Volver</a>
+        </div>
+    </header>
+
+    <section class="summary-metrics">
+        <article class="metric-card">
+            <span>Grupo</span>
+            <strong>{% if inscripcion %}{{ inscripcion.grupo.grado }}{{ inscripcion.grupo.letra }}{% else %}-{% endif %}</strong>
+            <small>{% if inscripcion %}{{ inscripcion.grupo.turno|title }}{% else %}Sin inscripcion{% endif %}</small>
+        </article>
+        <article class="metric-card">
+            <span>Lista</span>
+            <strong>{{ inscripcion.numero_lista|default:"-" }}</strong>
+            <small>Orden alfabetico</small>
+        </article>
+        <article class="metric-card">
+            <span>Documentos</span>
+            <strong>{{ documentos|length }}</strong>
+            <small>expediente digital</small>
+        </article>
+        <article class="metric-card {% if not alumno.activo %}danger{% endif %}">
+            <span>Estado</span>
+            <strong>{% if alumno.activo %}Activo{% else %}Oculto{% endif %}</strong>
+            <small>registro operativo</small>
+        </article>
+    </section>
+
+    <section class="teacher-info-grid">
+        <article class="detail-compact-card">
+            <h2>Datos del alumno</h2>
+            <dl class="compact-list">
+                <div><dt>CURP</dt><dd>{{ alumno.curp|default:"Sin CURP" }}</dd></div>
+                <div><dt>Nacimiento</dt><dd>{{ alumno.fecha_nacimiento|date:"d/m/Y"|default:"Sin fecha" }}</dd></div>
+                <div><dt>Genero</dt><dd>{{ alumno.genero|default:"Sin dato" }}</dd></div>
+                <div><dt>Telefono</dt><dd>{{ alumno.telefono|default:"Sin telefono" }}</dd></div>
+                <div><dt>Direccion</dt><dd>{{ alumno.direccion|default:"Sin direccion" }}</dd></div>
+            </dl>
+        </article>
+
+        <article class="detail-compact-card">
+            <h2>Tutor o responsable</h2>
+            <dl class="compact-list">
+                <div><dt>Nombre</dt><dd>{{ alumno.tutor.nombre|default:"Sin tutor" }}</dd></div>
+                <div><dt>Parentesco</dt><dd>{{ alumno.tutor.parentesco|default:"Sin dato" }}</dd></div>
+                <div><dt>Telefono</dt><dd>{{ alumno.tutor.telefono|default:"Sin telefono" }}</dd></div>
+                <div><dt>Alterno</dt><dd>{{ alumno.tutor.telefono_alterno|default:"Sin telefono alterno" }}</dd></div>
+                <div><dt>Correo</dt><dd>{{ alumno.tutor.correo|default:"Sin correo" }}</dd></div>
+                <div><dt>Ocupacion</dt><dd>{{ alumno.tutor.ocupacion|default:"Sin dato" }}</dd></div>
+            </dl>
+        </article>
+    </section>
+
+    <section class="teacher-info-grid">
+        <article class="detail-compact-card">
+            <h2>Emergencia</h2>
+            <dl class="compact-list">
+                <div><dt>Contacto</dt><dd>{{ alumno.contacto_emergencia|default:"Sin contacto" }}</dd></div>
+                <div><dt>Telefono</dt><dd>{{ alumno.telefono_emergencia|default:"Sin telefono" }}</dd></div>
+                <div><dt>Parentesco</dt><dd>{{ alumno.parentesco_emergencia|default:"Sin dato" }}</dd></div>
+            </dl>
+        </article>
+
+        <article class="detail-compact-card">
+            <h2>Datos medicos</h2>
+            <dl class="compact-list">
+                <div><dt>Tipo de sangre</dt><dd>{{ alumno.tipo_sangre|default:"Sin dato" }}</dd></div>
+                <div><dt>NSS</dt><dd>{{ alumno.numero_seguridad_social|default:"Sin dato" }}</dd></div>
+                <div><dt>Institucion medica</dt><dd>{{ alumno.institucion_medica|default:"Sin dato" }}</dd></div>
+                <div><dt>Alergias</dt><dd>{{ alumno.alergias|default:"Sin alergias registradas" }}</dd></div>
+                <div><dt>Padecimientos</dt><dd>{{ alumno.padecimientos|default:"Sin padecimientos registrados" }}</dd></div>
+                <div><dt>Medicamentos</dt><dd>{{ alumno.medicamentos|default:"Sin medicamentos registrados" }}</dd></div>
+            </dl>
+        </article>
+    </section>
+
+    <section class="detail-section soft-section" id="documentos">
+        <div class="section-title-row">
+            <div>
+                <h2>Documentos</h2>
+                <p class="muted">Expediente digital del alumno.</p>
+            </div>
+        </div>
+
+        <form class="document-upload-form" method="post" enctype="multipart/form-data" action="{% url 'escuela:alumno_documento_crear' alumno.id %}">
+            {% csrf_token %}
+            <div class="form-grid">
+                {% for field in documento_form %}
+                    <div class="form-group {% if field.name == 'notas' %}span-2{% endif %}">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="form-actions">
+                <button class="button" type="submit">Subir documento</button>
+            </div>
+        </form>
+
+        <div class="table-panel document-table">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Tipo</th>
+                        <th>Nombre</th>
+                        <th>Notas</th>
+                        <th>Fecha</th>
+                        <th>Archivo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for documento in documentos %}
+                        <tr>
+                            <td>{{ documento.get_tipo_display }}</td>
+                            <td><strong>{{ documento.nombre }}</strong></td>
+                            <td>{{ documento.notas|default:"Sin notas" }}</td>
+                            <td>{{ documento.fecha_subida|date:"d/m/Y H:i" }}</td>
+                            <td><a class="mini-button" href="{{ documento.archivo.url }}" target="_blank" rel="noopener">Abrir</a></td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="5">Todavia no hay documentos cargados.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="detail-section soft-section" id="kardex">
+        <div class="section-title-row">
+            <div>
+                <h2>Kardex del alumno</h2>
+                <p class="muted">Historial de altas, ediciones, documentos y cambios de estado.</p>
+            </div>
+        </div>
+
+        <div class="table-panel">
+            <table class="table kardex-table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Movimiento</th>
+                        <th>Referencia</th>
+                        <th>Responsable</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for movimiento in kardex_alumno %}
+                        <tr>
+                            <td>{{ movimiento.fecha|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                <strong>{{ movimiento.get_tipo_display }}</strong>
+                                <br><span class="muted">{{ movimiento.descripcion|default:"Sin descripcion" }}</span>
+                            </td>
+                            <td>{{ movimiento.referencia|default:"Sin referencia" }}</td>
+                            <td>{% if movimiento.responsable %}{{ movimiento.responsable.get_full_name|default:movimiento.responsable.username }}{% else %}Sistema{% endif %}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="4">Todavia no hay movimientos registrados.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</section>
+{% endblock %}

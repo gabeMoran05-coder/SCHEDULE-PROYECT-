@@ -3,6 +3,7 @@
 {% block title %}Tablero | Sistema Secundaria{% endblock %}
 
 {% block content %}
+<div class="schedule-page">
 <header class="page-header">
     <div>
         <h1>Tablero de horarios</h1>
@@ -116,7 +117,7 @@
                                         data-aula="{{ cell.clase.aula|default:'pendiente' }}"
                                     >
                                         <strong>{{ cell.clase.contrato.docente }}</strong>
-                                        <span>{{ cell.clase.materia.nombre }} - {{ cell.clase.grupo }}</span>
+                                        <span>{{ cell.clase.materia.nombre }}</span>
                                         <small>Aula {{ cell.clase.aula|default:"pendiente" }}</small>
                                     </article>
                                 {% endif %}
@@ -134,4 +135,5 @@
         {% endfor %}
     </section>
 </section>
+</div>
 {% endblock %}

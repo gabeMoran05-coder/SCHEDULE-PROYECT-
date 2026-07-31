@@ -77,11 +77,9 @@
                         <div class="action-stack">
                             <a class="mini-button" href="{% url 'escuela:docente_detalle' docente.id %}">Ver</a>
                             <a class="mini-button" href="{% url 'escuela:docente_editar' docente.id %}">Editar</a>
-                            <form method="post" action="{% url 'escuela:docente_toggle_activo' docente.id %}">
-                                {% csrf_token %}
-                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                <button class="danger-button" type="submit">{% if docente.activo %}Ocultar{% else %}Restaurar{% endif %}</button>
-                            </form>
+                            <a class="danger-button" href="{% url 'escuela:docente_toggle_activo' docente.id %}?next={{ request.get_full_path|urlencode }}">
+                                {% if docente.activo %}Ocultar{% else %}Restaurar{% endif %}
+                            </a>
                         </div>
                     </td>
                 </tr>

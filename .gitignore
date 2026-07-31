@@ -5,6 +5,7 @@ __pycache__/
 db.sqlite3
 media/
 logs/*.log
+BaseDeDatos/imports/*.xlsx
 node_modules/
 dist/
 .pytest_cache/

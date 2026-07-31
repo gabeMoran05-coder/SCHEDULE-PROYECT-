@@ -4,20 +4,74 @@
 
 {% block content %}
 <section class="page-card">
-    <header class="page-header detail-header">
-        <div>
-            <h1>{{ docente.apellidos }} {{ docente.nombres }}</h1>
-            <p>No. empleado: {{ docente.numero_empleado|default:"Sin numero" }}</p>
+    <header class="teacher-hero">
+        <div class="teacher-identity">
+            {% if docente.foto %}
+                <button class="teacher-photo-frame teacher-photo-button" type="button" data-photo-open aria-label="Ver foto de {{ docente.apellidos }} {{ docente.nombres }}">
+                    <img src="{{ docente.foto.url }}" alt="Foto de {{ docente.apellidos }} {{ docente.nombres }}">
+                    <span class="photo-open-label">Ver foto</span>
+                </button>
+            {% else %}
+                <div class="teacher-photo-frame">
+                    <span>{{ docente.nombres|first }}{{ docente.apellidos|first }}</span>
+                </div>
+            {% endif %}
+            <div>
+                <h1>{{ docente.apellidos }} {{ docente.nombres }}</h1>
+                <p>No. empleado: {{ docente.numero_empleado|default:"Sin numero" }} - {{ contrato.institucion.nombre }} - {{ contrato.ciclo.nombre }}</p>
+            </div>
         </div>
-        <div class="header-actions">
+        <div class="teacher-action-row">
+            <a class="button" href="#kardex">Kardex</a>
+            <a class="button button-secondary" href="#materias">Materias</a>
+            <a class="button button-secondary" href="#asignar">Asignar</a>
+            <a class="button button-secondary" href="{% url 'escuela:docente_editar' docente.id %}">Editar</a>
+            <a class="{% if docente.activo %}danger-button{% else %}button{% endif %}" href="{% url 'escuela:docente_toggle_activo' docente.id %}?next={{ request.get_full_path|urlencode }}">
+                {% if docente.activo %}Ocultar{% else %}Reincorporar{% endif %}
+            </a>
             <a class="button button-secondary" href="{% url 'escuela:docentes' %}">Volver</a>
         </div>
     </header>
 
-    <section class="detail-grid">
-        <article class="detail-box">
-            <h2>Datos del docente</h2>
-            <dl class="detail-list">
+    {% if docente.foto %}
+        <dialog class="photo-dialog" data-photo-dialog>
+            <div class="photo-dialog-panel">
+                <header>
+                    <strong>{{ docente.apellidos }} {{ docente.nombres }}</strong>
+                    <button class="mini-button" type="button" data-photo-close>Cerrar</button>
+                </header>
+                <img src="{{ docente.foto.url }}" alt="Foto de {{ docente.apellidos }} {{ docente.nombres }}">
+            </div>
+        </dialog>
+    {% endif %}
+
+    <section class="summary-metrics">
+        <article class="metric-card">
+            <span>Contratadas</span>
+            <strong>{{ contrato.horas_semanales }}</strong>
+            <small>horas por semana</small>
+        </article>
+        <article class="metric-card">
+            <span>Asignadas</span>
+            <strong>{{ horas_asignadas }}</strong>
+            <small>en materias</small>
+        </article>
+        <article class="metric-card {% if horas_disponibles < 0 %}danger{% endif %}">
+            <span>Disponibles</span>
+            <strong>{{ horas_disponibles }}</strong>
+            <small>sin asignar</small>
+        </article>
+        <article class="metric-card {% if total_redistribuir %}warning{% endif %}">
+            <span>Redistribuir</span>
+            <strong>{{ total_redistribuir }}</strong>
+            <small>si causa baja</small>
+        </article>
+    </section>
+
+    <section class="teacher-info-grid">
+        <article class="detail-compact-card">
+            <h2>Informacion general</h2>
+            <dl class="compact-list">
                 <div><dt>Correo</dt><dd>{{ docente.correo|default:"Sin correo" }}</dd></div>
                 <div><dt>Telefono</dt><dd>{{ docente.telefono|default:"Sin telefono" }}</dd></div>
                 <div><dt>Estado</dt><dd><span class="status-pill {% if docente.activo %}ok{% else %}off{% endif %}">{% if docente.activo %}Activo{% else %}Inactivo{% endif %}</span></dd></div>
@@ -25,9 +79,9 @@
             </dl>
         </article>
 
-        <article class="detail-box">
+        <article class="detail-compact-card">
             <h2>Contrato del ciclo</h2>
-            <dl class="detail-list">
+            <dl class="compact-list">
                 <div><dt>Institucion</dt><dd>{{ contrato.institucion.nombre }}</dd></div>
                 <div><dt>Ciclo</dt><dd>{{ contrato.ciclo.nombre }}</dd></div>
                 <div><dt>Horas contratadas</dt><dd><strong>{{ contrato.horas_semanales }} h</strong></dd></div>
@@ -37,7 +91,7 @@
         </article>
     </section>
 
-    <section class="detail-section">
+    <section class="detail-section soft-section">
         <div class="section-title-row">
             <div>
                 <h2>Horas a redistribuir</h2>
@@ -78,7 +132,7 @@
         </div>
     </section>
 
-    <section class="detail-section">
+    <section class="detail-section soft-section" id="kardex">
         <div class="section-title-row">
             <div>
                 <h2>Kardex reciente</h2>
@@ -94,6 +148,7 @@
                         <th>Movimiento</th>
                         <th>Horas</th>
                         <th>Referencia</th>
+                        <th>Motivo</th>
                         <th>Responsable</th>
                     </tr>
                 </thead>
@@ -111,18 +166,30 @@
                                 </strong>
                                 <br><span class="muted">{{ movimiento.horas_antes }} -> {{ movimiento.horas_despues }}</span>
                             </td>
-                            <td>{{ movimiento.referencia|default:"Sin referencia" }}</td>
+                            <td>
+                                {{ movimiento.referencia|default:"Sin referencia" }}
+                                {% if movimiento.documento_referencia %}
+                                    <br><span class="muted">Doc: {{ movimiento.documento_referencia }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if movimiento.motivo %}
+                                    <strong>{{ movimiento.get_motivo_display }}</strong>
+                                {% else %}
+                                    <span class="muted">Sin motivo</span>
+                                {% endif %}
+                            </td>
                             <td>{% if movimiento.responsable %}{{ movimiento.responsable.get_full_name|default:movimiento.responsable.username }}{% else %}Sistema{% endif %}</td>
                         </tr>
                     {% empty %}
-                        <tr><td colspan="5">Todavia no hay movimientos registrados.</td></tr>
+                        <tr><td colspan="6">Todavia no hay movimientos registrados.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </section>
 
-    <section class="detail-section">
+    <section class="detail-section soft-section" id="materias">
         <div class="section-title-row">
             <div>
                 <h2>Materias asignadas</h2>
@@ -175,7 +242,7 @@
         </div>
     </section>
 
-    <section class="detail-section">
+    <section class="detail-section soft-section">
         <div class="section-title-row">
             <div>
                 <h2>Horario semanal</h2>
@@ -212,8 +279,13 @@
         </div>
     </section>
 
-    <section class="detail-section">
-        <h2>Asignar materia</h2>
+    <section class="detail-section soft-section" id="asignar">
+        <div class="section-title-row">
+            <div>
+                <h2>Asignar materia</h2>
+                <p class="muted">Agrega o ajusta las materias que imparte en el ciclo seleccionado.</p>
+            </div>
+        </div>
         <form method="post" class="assignment-form">
             {% csrf_token %}
             <input type="hidden" name="action" value="asignar_materia">

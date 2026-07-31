@@ -51,20 +51,48 @@ class Periodo(models.Model):
 
 class Tutor(models.Model):
     nombre = models.CharField(max_length=120)
+    parentesco = models.CharField(max_length=40, blank=True)
     telefono = models.CharField(max_length=20, blank=True)
+    telefono_alterno = models.CharField(max_length=20, blank=True)
     correo = models.EmailField(blank=True)
+    direccion = models.CharField(max_length=220, blank=True)
+    ocupacion = models.CharField(max_length=100, blank=True)
 
     def __str__(self):
         return self.nombre
 
 
 class Alumno(models.Model):
+    class TipoSangre(models.TextChoices):
+        A_POS = "A+", "A+"
+        A_NEG = "A-", "A-"
+        B_POS = "B+", "B+"
+        B_NEG = "B-", "B-"
+        AB_POS = "AB+", "AB+"
+        AB_NEG = "AB-", "AB-"
+        O_POS = "O+", "O+"
+        O_NEG = "O-", "O-"
+
     institucion = models.ForeignKey(Institucion, on_delete=models.PROTECT, related_name="alumnos")
     matricula = models.CharField(max_length=20, unique=True)
     nombres = models.CharField(max_length=80)
     apellidos = models.CharField(max_length=100)
     fecha_nacimiento = models.DateField(null=True, blank=True)
     tutor = models.ForeignKey(Tutor, on_delete=models.SET_NULL, null=True, blank=True)
+    curp = models.CharField("CURP", max_length=18, blank=True)
+    genero = models.CharField(max_length=30, blank=True)
+    direccion = models.CharField(max_length=220, blank=True)
+    telefono = models.CharField(max_length=20, blank=True)
+    contacto_emergencia = models.CharField(max_length=120, blank=True)
+    telefono_emergencia = models.CharField(max_length=20, blank=True)
+    parentesco_emergencia = models.CharField(max_length=40, blank=True)
+    tipo_sangre = models.CharField(max_length=3, choices=TipoSangre.choices, blank=True)
+    numero_seguridad_social = models.CharField(max_length=30, blank=True)
+    institucion_medica = models.CharField(max_length=80, blank=True)
+    alergias = models.TextField(blank=True)
+    padecimientos = models.TextField(blank=True)
+    medicamentos = models.TextField(blank=True)
+    observaciones_medicas = models.TextField(blank=True)
     activo = models.BooleanField(default=True)
 
     class Meta:
@@ -74,12 +102,71 @@ class Alumno(models.Model):
         return f"{self.matricula} - {self.apellidos} {self.nombres}"
 
 
+class KardexAlumno(models.Model):
+    class TipoMovimiento(models.TextChoices):
+        ALTA = "ALTA", "Alta"
+        EDICION = "EDICION", "Edicion"
+        CAMBIO_GRUPO = "CAMBIO_GRUPO", "Cambio de grupo"
+        DOCUMENTO = "DOCUMENTO", "Documento"
+        BAJA = "BAJA", "Baja u ocultamiento"
+        RESTAURACION = "RESTAURACION", "Restauracion"
+        SALUD = "SALUD", "Salud"
+        CONTACTO = "CONTACTO", "Contacto"
+        OTRO = "OTRO", "Otro"
+
+    alumno = models.ForeignKey(Alumno, on_delete=models.CASCADE, related_name="kardex")
+    inscripcion = models.ForeignKey("Inscripcion", on_delete=models.SET_NULL, null=True, blank=True, related_name="kardex")
+    fecha = models.DateTimeField(auto_now_add=True)
+    tipo = models.CharField(max_length=24, choices=TipoMovimiento.choices)
+    referencia = models.CharField(max_length=160, blank=True)
+    descripcion = models.TextField(blank=True)
+    responsable = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        ordering = ["-fecha"]
+        verbose_name = "Kardex alumno"
+        verbose_name_plural = "Kardex alumnos"
+
+    def __str__(self):
+        return f"{self.alumno} - {self.get_tipo_display()} - {self.fecha:%Y-%m-%d %H:%M}"
+
+
+class DocumentoAlumno(models.Model):
+    class TipoDocumento(models.TextChoices):
+        ACTA = "ACTA", "Acta de nacimiento"
+        CURP = "CURP", "CURP"
+        COMPROBANTE_DOMICILIO = "COMPROBANTE_DOMICILIO", "Comprobante de domicilio"
+        CERTIFICADO_MEDICO = "CERTIFICADO_MEDICO", "Certificado medico"
+        NSS = "NSS", "Numero de seguridad social"
+        BOLETA = "BOLETA", "Boleta o calificaciones"
+        IDENTIFICACION_TUTOR = "IDENTIFICACION_TUTOR", "Identificacion del tutor"
+        AUTORIZACION = "AUTORIZACION", "Autorizacion"
+        OTRO = "OTRO", "Otro"
+
+    alumno = models.ForeignKey(Alumno, on_delete=models.CASCADE, related_name="documentos")
+    tipo = models.CharField(max_length=32, choices=TipoDocumento.choices)
+    nombre = models.CharField(max_length=120)
+    archivo = models.FileField(upload_to="alumnos/documentos/")
+    notas = models.CharField(max_length=220, blank=True)
+    fecha_subida = models.DateTimeField(auto_now_add=True)
+    responsable = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        ordering = ["-fecha_subida"]
+        verbose_name = "Documento de alumno"
+        verbose_name_plural = "Documentos de alumnos"
+
+    def __str__(self):
+        return f"{self.alumno} - {self.get_tipo_display()}"
+
+
 class Docente(models.Model):
     numero_empleado = models.CharField(max_length=20, unique=True, null=True, blank=True)
     nombres = models.CharField(max_length=80)
     apellidos = models.CharField(max_length=100)
     correo = models.EmailField(blank=True)
     telefono = models.CharField(max_length=20, blank=True)
+    foto = models.FileField(upload_to="docentes/fotos/", blank=True, null=True)
     activo = models.BooleanField(default=True)
 
     class Meta:
@@ -149,11 +236,13 @@ class Inscripcion(models.Model):
     alumno = models.ForeignKey(Alumno, on_delete=models.CASCADE)
     grupo = models.ForeignKey(Grupo, on_delete=models.PROTECT)
     ciclo = models.ForeignKey(CicloEscolar, on_delete=models.PROTECT)
+    numero_lista = models.PositiveSmallIntegerField(null=True, blank=True)
     fecha = models.DateField(auto_now_add=True)
     activa = models.BooleanField(default=True)
 
     class Meta:
         unique_together = ["alumno", "ciclo"]
+        ordering = ["grupo__grado", "grupo__letra", "numero_lista", "alumno__apellidos", "alumno__nombres"]
 
     def __str__(self):
         return f"{self.alumno} en {self.grupo}"
@@ -185,12 +274,33 @@ class KardexDocente(models.Model):
         RESTAURACION = "RESTAURACION", "Restauracion"
         AJUSTE = "AJUSTE", "Ajuste"
 
+    class MotivoMovimiento(models.TextChoices):
+        INCAPACIDAD = "INCAPACIDAD", "Incapacidad"
+        LICENCIA_MEDICA = "LICENCIA_MEDICA", "Licencia medica"
+        LICENCIA_SIN_GOCE = "LICENCIA_SIN_GOCE", "Licencia sin goce"
+        PERMISO_PERSONAL = "PERMISO_PERSONAL", "Permiso por asuntos personales"
+        COMISION = "COMISION", "Comision"
+        CAMBIO_ADSCRIPCION = "CAMBIO_ADSCRIPCION", "Cambio de adscripcion"
+        REUBICACION = "REUBICACION", "Reubicacion"
+        GRAVIDEZ_MATERNIDAD = "GRAVIDEZ_MATERNIDAD", "Gravidez o maternidad"
+        PATERNIDAD = "PATERNIDAD", "Paternidad"
+        CUIDADOS_FAMILIARES = "CUIDADOS_FAMILIARES", "Cuidados familiares"
+        CAPACITACION = "CAPACITACION", "Capacitacion"
+        JUBILACION = "JUBILACION", "Jubilacion"
+        RENUNCIA = "RENUNCIA", "Renuncia"
+        BAJA_DEFINITIVA = "BAJA_DEFINITIVA", "Baja definitiva"
+        REINCORPORACION = "REINCORPORACION", "Reincorporacion"
+        FIN_LICENCIA = "FIN_LICENCIA", "Fin de licencia"
+        OTRO = "OTRO", "Otro"
+
     docente = models.ForeignKey(Docente, on_delete=models.CASCADE, related_name="kardex")
     contrato = models.ForeignKey(ContratoDocente, on_delete=models.SET_NULL, null=True, blank=True, related_name="kardex")
     fecha = models.DateTimeField(auto_now_add=True)
     tipo = models.CharField(max_length=24, choices=TipoMovimiento.choices)
+    motivo = models.CharField(max_length=32, choices=MotivoMovimiento.choices, blank=True)
     referencia = models.CharField(max_length=160, blank=True)
     descripcion = models.TextField(blank=True)
+    documento_referencia = models.CharField(max_length=80, blank=True)
     horas_antes = models.PositiveSmallIntegerField(default=0)
     horas_despues = models.PositiveSmallIntegerField(default=0)
     horas_movimiento = models.IntegerField(default=0)

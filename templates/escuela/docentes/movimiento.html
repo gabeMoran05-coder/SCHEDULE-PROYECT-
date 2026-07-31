@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}{% if movimiento == "ocultar" %}Ocultar docente{% else %}Reincorporar docente{% endif %} | Sistema Secundaria{% endblock %}
+
+{% block content %}
+<section class="page-card form-page-card movement-page-card">
+    <header class="page-header">
+        <div>
+            <h1>{% if movimiento == "ocultar" %}Ocultar o dar de baja docente{% else %}Reincorporar docente{% endif %}</h1>
+            <p>
+                {% if movimiento == "ocultar" %}
+                    Registra la razon antes de ocultar al docente. Este movimiento quedara en el kardex.
+                {% else %}
+                    Registra la razon del regreso antes de activar nuevamente al docente.
+                {% endif %}
+            </p>
+        </div>
+    </header>
+
+    <section class="movement-summary">
+        <div>
+            <span>Docente</span>
+            <strong>{{ docente.apellidos }} {{ docente.nombres }}</strong>
+        </div>
+        <div>
+            <span>No. empleado</span>
+            <strong>{{ docente.numero_empleado|default:"Sin numero" }}</strong>
+        </div>
+        <div>
+            <span>Ciclo</span>
+            <strong>{% if contrato %}{{ contrato.ciclo.nombre }}{% else %}Sin contrato{% endif %}</strong>
+        </div>
+        <div>
+            <span>Horas afectadas</span>
+            <strong>{% if contrato %}{{ contrato.horas_semanales }} h{% else %}0 h{% endif %}</strong>
+        </div>
+    </section>
+
+    <div class="movement-note {% if movimiento == 'ocultar' %}warning{% else %}success{% endif %}">
+        {% if movimiento == "ocultar" %}
+            Las horas y materias que tenia este docente quedan como carga para revisar y redistribuir. No se borran sus registros historicos.
+        {% else %}
+            La reincorporacion quedara registrada como movimiento administrativo. Despues puedes revisar si recupera horas o materias.
+        {% endif %}
+    </div>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next_url }}">
+
+        {% if form.non_field_errors %}
+            <div class="alert error">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <fieldset class="form-fieldset">
+            <legend>{% if movimiento == "ocultar" %}Motivo de ausencia o baja{% else %}Motivo de reincorporacion{% endif %}</legend>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="{{ form.motivo.id_for_label }}">{{ form.motivo.label }}</label>
+                    {{ form.motivo }}
+                    {% for error in form.motivo.errors %}
+                        <small class="field-error">{{ error }}</small>
+                    {% endfor %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.documento_referencia.id_for_label }}">{{ form.documento_referencia.label }}</label>
+                    {{ form.documento_referencia }}
+                    {% for error in form.documento_referencia.errors %}
+                        <small class="field-error">{{ error }}</small>
+                    {% endfor %}
+                </div>
+                <div class="form-group span-2">
+                    <label for="{{ form.descripcion.id_for_label }}">{{ form.descripcion.label }}</label>
+                    {{ form.descripcion }}
+                    {% if form.descripcion.help_text %}
+                        <small class="muted">{{ form.descripcion.help_text }}</small>
+                    {% endif %}
+                    {% for error in form.descripcion.errors %}
+                        <small class="field-error">{{ error }}</small>
+                    {% endfor %}
+                </div>
+            </div>
+        </fieldset>
+
+        <div class="form-actions">
+            <button class="{% if movimiento == 'ocultar' %}danger-button{% else %}button{% endif %}" type="submit">
+                {% if movimiento == "ocultar" %}Confirmar movimiento{% else %}Confirmar reincorporacion{% endif %}
+            </button>
+            <a class="button button-secondary" href="{{ next_url }}">Cancelar</a>
+        </div>
+    </form>
+</section>
+{% endblock %}
